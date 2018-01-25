@@ -25,75 +25,39 @@ function upstream_milestone_table_settings() {
      */
 
     $columnsSchema = array(
-        'id' => array(
-            'display'       => false,
-            'type'          => 'text',
-            'heading'       => '',
-            'heading_class' => '',
-            'row_class'     => '',
-        ),
-        'created_by' => array(
-            'display'       => false,
-            'type'          => 'name',
-            'heading'       => '',
-            'heading_class' => '',
-            'row_class'     => '',
-        ),
-        'created_time' => array(
-            'display'       => false,
-            'type'          => 'text',
-            'heading'       => '',
-            'heading_class' => '',
-            'row_class'     => '',
-        ),
         'milestone' => array(
-            'display'       => true,
-            'type'          => 'text',
-            'heading'       => upstream_milestone_label(),
-            'heading_class' => '',
-            'row_class'     => 'test',
+            'type'  => 'milestone',
+            'label' => upstream_milestone_label()
         ),
         'assigned_to' => array(
-            'display'       => true,
-            'type'          => 'name',
-            'heading'       => __( 'Assigned To', 'upstream' ),
-            'heading_class' => '',
-            'row_class'     => '',
+            'type'  => 'user',
+            'label' => __('Assigned To', 'upstream')
         ),
         'tasks' => array(
-            'display'       => true,
-            'type'          => 'tasks',
-            'heading'       => upstream_task_label_plural(),
-            'heading_class' => '',
-            'row_class'     => '',
+            'type'        => 'tasks',
+            'label'       => upstream_task_label_plural(),
+            'orderable'   => false,
+            'searcheable' => false
         ),
         'progress' => array(
-            'display'       => true,
-            'type'          => 'text',
-            'heading'       => __( 'Progress', 'upstream' ),
-            'heading_class' => '',
-            'row_class'     => '',
+            'type'        => 'progress',
+            'label'       => __('Progress', 'upstream'),
+            'searcheable' => false
         ),
         'start_date' => array(
-            'display'       => true,
-            'type'          => 'date',
-            'heading'       => __( 'Start Date', 'upstream' ),
-            'heading_class' => '',
-            'row_class'     => '',
+            'type'  => 'date',
+            'label' => __('Start Date', 'upstream'),
         ),
         'end_date' => array(
-            'display'       => true,
-            'type'          => 'date',
-            'heading'       => __( 'End Date', 'upstream' ),
-            'heading_class' => '',
-            'row_class'     => '',
+            'type'  => 'date',
+            'label' => __('End Date', 'upstream'),
         ),
         'notes' => array(
-            'display'       => true,
-            'type'          => 'textarea',
-            'heading'       => __( 'Notes', 'upstream' ),
-            'heading_class' => 'none',
-            'row_class'     => '',
+            'type'        => 'longText',
+            'label'       => __('Notes', 'upstream'),
+            'classes'     => 'text-center',
+            'orderable'   => false,
+            'searcheable' => false
         )
     );
 
@@ -104,18 +68,18 @@ function upstream_milestone_table_settings() {
     $allowComments = upstreamAreCommentsEnabledOnMilestones();
     if ($allowComments) {
         $columnsSchema['comments'] = array(
-            'display'       => true,
-            'type'          => 'comments',
-            'heading'       => __('Comments'),
-            'heading_class' => 'none',
-            'row_class'     => "",
-            'item_type'     => "milestone"
+            'type'        => 'comments',
+            'label'       => __('Comments'),
+            'item_type'   => 'milestone',
+            'classes'     => 'text-center',
+            'orderable'   => false,
+            'searcheable' => false
         );
     }
 
-    $settings = apply_filters( 'upstream_milestone_table_settings', $columnsSchema);
+    // $settings = apply_filters( 'upstream_milestone_table_settings', $columnsSchema);
 
-    return $settings;
+    return $columnsSchema;
 
 }
 
@@ -429,7 +393,7 @@ function upstream_output_table_header( $table ) {
     $output = null;
 
     switch ( $table ) {
-        case 'milestones':
+        case 'milestone':
             $settings   = upstream_milestone_table_settings();
             break;
         case 'tasks':
@@ -443,7 +407,8 @@ function upstream_output_table_header( $table ) {
             break;
     }
 
-    if( isset( $settings ) ) :
+    // @todo: adapt and remove
+    if( isset( $settings ) && $table !== 'milestone' ) :
 
         $output .= '<tr>';
         foreach ($settings as $key => $setting) {
@@ -451,14 +416,72 @@ function upstream_output_table_header( $table ) {
             if( isset( $setting['display'] ) && ! $setting['display'] )
                 continue;
 
-            $output .= "<th class='" . esc_attr( $setting['heading_class'] ) . "'>" . $setting['heading'] . "</th>";
+            $attrs = array();
+            if (isset($setting['attributes'])
+                && is_array($setting['attributes'])
+            ) {
+                foreach ($setting['attributes'] as $attrKey => $attrValue) {
+                    $attrs[] = sprintf('%s="%s"', $attrKey, esc_attr($attrValue));
+                }
+            }
+
+            $output .= "<th class='" . esc_attr( $setting['heading_class'] ) . "'" . (count($attrs) > 0 ? implode(' ', $attrs) : '') . ">" . $setting['heading'] . "</th>";
 
         }
         $output .= '</tr>';
 
+        return $output;
     endif;
 
-    return $output;
+    $html = '<tr>';
+
+    foreach ($settings as $columnName => $columnSettings) {
+        $isOrderable = true;
+        if (isset($columnSettings['orderable'])
+            && (bool)$columnSettings['orderable'] === false
+        ) {
+            $isOrderable = false;
+        }
+
+        $attrs = array(
+            'class'       => '',
+            'data-column' => $columnName
+        );
+
+        if ($isOrderable) {
+            $attrs['class'] .= ' is-orderable ';
+            $attrs['role'] = 'button';
+        }
+
+        if (isset($columnSettings['classes'])) {
+            $attrs['class'] .= $columnSettings['classes'];
+        }
+
+        if (isset($setting['attributes'])
+            && is_array($setting['attributes'])
+        ) {
+            $attrs = array_merge($attrs, $settings['attributes']);
+        }
+
+        // @todo: filter
+
+        $sanitizedAttrs = array();
+        foreach ($attrs as $attrKey => $attrValue) {
+            $sanitizedAttrs[] = sprintf('%s="%s"', $attrKey, esc_attr($attrValue));
+        }
+
+        $th = sprintf('<th %s>%s</th>', implode(' ', $sanitizedAttrs), (isset($columnSettings['label']) ? $columnSettings['label'] : ''));
+
+        $html .= $th;
+
+        // @todo: filter
+    }
+
+    $html .= '</tr>';
+
+    // @todo: filter
+
+    return $html;
 
 }
 
@@ -476,8 +499,13 @@ function upstream_output_table_rows( $id, $table, $filterRowsetByCurrentUser = f
     }
 
     switch ( $table ) {
-        case 'milestones':
-            $data       = upstream_are_milestones_disabled($id) || upstream_disable_milestones() ? array() : upstream_project_milestones($id);
+        case 'milestone':
+            if (upstream_are_milestones_disabled($id) || upstream_disable_milestones()) {
+                $data = array();
+            } else {
+                $data = upstream_project_milestones($id);
+            }
+
             $settings   = upstream_milestone_table_settings();
             break;
         case 'tasks':
@@ -497,79 +525,159 @@ function upstream_output_table_rows( $id, $table, $filterRowsetByCurrentUser = f
             break;
     }
 
-    if( empty( $data[0] ) )
-        return;
+    if ($table !== 'milestone') {
+        if( empty( $data[0] ) )
+            return;
 
-    $data = array_reverse( $data );
-    $output = null;
+        $data = array_reverse( $data );
+        $output = null;
 
-    foreach ( $data as $item ) {
-        // Check if $item should be skipped if we want to filter data by the current logged in user.
-        if ($filterRowsetByCurrentUser && (!isset($item['assigned_to']) || ($currentUserId > 0 && (int)$item['assigned_to'] !== $currentUserId))) {
-            continue;
-        }
-
-        $tr = '<tr>';
-        foreach ($settings as $key => $setting) {
-            if( isset( $setting['display'] ) && ! $setting['display'] )
+        foreach ( $data as $item ) {
+            // Check if $item should be skipped if we want to filter data by the current logged in user.
+            if ($filterRowsetByCurrentUser && (!isset($item['assigned_to']) || ($currentUserId > 0 && (int)$item['assigned_to'] !== $currentUserId))) {
                 continue;
-
-            if( ! isset( $item[$key] ) )
-                $item[$key] = '';
-
-            $order = null;
-
-
-            // get the raw value before formatting
-            // will be used with the frontend edit plugin for getting actual values via JS
-            $data_value = maybe_serialize( $item[$key] );
-
-            // if we have a date field, set the data-order attribute to allow proper ordering in the table
-            if( $setting['type'] == 'date' ) {
-                $order = 'data-order="' . esc_attr( $data_value ) . '"';
-            }
-            if( $setting['type'] == 'file' ) {
-                $data_value = '';
             }
 
-            // now process and format the data for proper output
-            $field_data = upstream_format_table_data( $item, $key, $setting );
+            $tr = '<tr>';
+            foreach ($settings as $key => $setting) {
+                if( isset( $setting['display'] ) && ! $setting['display'] )
+                    continue;
 
-            if( $key == 'status' ) {
-                $color  = isset( $status_c[$field_data] ) ? $status_c[$field_data] : 'transparent';
+                if( ! isset( $item[$key] ) )
+                    $item[$key] = '';
 
-                if (empty($field_data)) {
+                $order = null;
+
+                if (is_array($item[$key])) {
+                    $item[$key] = implode('#', $item[$key]);
+                }
+
+                // get the raw value before formatting
+                // will be used with the frontend edit plugin for getting actual values via JS
+                $data_value = maybe_serialize( $item[$key] );
+
+                // if we have a date field, set the data-order attribute to allow proper ordering in the table
+                if( $setting['type'] == 'date' ) {
+                    $order = 'data-order="' . esc_attr( $data_value ) . '"';
+                }
+                if( $setting['type'] == 'file' ) {
+                    $data_value = '';
+                }
+
+                // now process and format the data for proper output
+                $field_data = upstream_format_table_data( $item, $key, $setting );
+
+                $isValueEmpty = strlen($field_data) === 0;
+
+                if ($key === 'status'
+                    || $key === 'severity'
+                ) {
+                    $collectionKeyName = $key . '_c';
+                    $color = isset(${$collectionKeyName}[$field_data])
+                        ? ${$collectionKeyName}[$field_data]
+                        : 'transparent';
+                    if (!$isValueEmpty) {
+                        $field_data = sprintf(
+                            '<span class="btn btn-xs" style="background: %s">%s</span>',
+                            esc_attr($color),
+                            esc_html($field_data)
+                        );
+                    }
+                }
+
+                if ($isValueEmpty) {
                     $field_data = '<i>' . __('none', 'upstream') . '</i>';
+                }
+
+                $td = '<td data-name="' . esc_attr( $key ) . '" ' . $order . ' data-value="' . esc_attr( $data_value ) . '" class="' . esc_attr( $setting['row_class'] ) . '">' . $field_data . '</td>';
+
+                $tr .= apply_filters('upstream:frontend:renderGridDataRowColumn', $td, $key, $setting, $item, $table);
+            }
+
+            $tr .= '</tr>';
+
+            $tr = apply_filters('upstream:frontend:renderGridDataRow', $tr, $item, $table);
+
+            $output .= $tr;
+
+        }
+    } else {
+        $users = upstreamGetUsersMap();
+        $milestonesColors = upstream_project_milestone_colors();
+
+        foreach ($data as $row) {
+            $tr = '<tr data-id="' . $row['id'] . '">';
+            foreach ($settings as $columnName => $columnSettings) {
+                $columnType = $columnSettings['type'];
+
+                if ($table === 'milestone' && $columnName === $table || $columnName === 'title') {
+                    $td = sprintf(
+                        '<td>
+                          <a href="#" data-toggle="up-modal" data-up-target="%s" data-column="%s" data-value="%s">%3$s</a>
+                        </td>',
+                        '#' . $table . 'Modal',
+                        $table,
+                        $row[$columnName]
+                    );
+                } else if ($columnType === 'longText') {
+                    $isEmpty = strlen(trim($row[$columnName])) === 0;
+
+                    $td = sprintf(
+                        '<td class="text-center">
+                          <i class="fa fa-%s"></i>
+                          <div class="hide" data-column="%s">%s</div>
+                        </td>',
+                        !$isEmpty ? 'check' : 'times',
+                        $columnName,
+                        $row[$columnName]
+                    );
+                } else if ($columnType === 'comments') {
+                    $td = sprintf(
+                        '<td class="text-center">
+                          <i class="fa fa-comments-o"></i> %s
+                          <div class="hide" data-column="%s"></div>
+                        </td>',
+                        (int)$row[$columnName . '_count'],
+                        $columnName
+                    );
                 } else {
-                    $field_data = '<span class="btn btn-xs" style="background: ' . esc_attr( $color ) . '">' . esc_html( $field_data ) . '</span>';
+                    $columnValue = $row[$columnName];
+
+                    if ($columnType === 'date') {
+                        $row[$columnName] = upstream_convert_UTC_date_to_timezone($row[$columnName], false);
+                    } else if ($columnType === 'progress') {
+                        $row[$columnName] .= '%';
+                    } else if ($columnType === 'tasks') {
+                        $row[$columnName] = sprintf('%s Open / %s Total', $row['task_open'], $row['task_count']);
+                    } else if ($columnType === 'user') {
+                        if ($row[$columnName] > 0) {
+                            if (isset($users[$row[$columnName]])) {
+                                $row[$columnName] = $users[$row[$columnName]];
+                            } else {
+                                $row[$columnName] = '<i>user not found</i>';
+                            }
+                        } else {
+                            $row[$columnName] = '<i>none</i>';
+                        }
+                    }
+
+                    $td = sprintf(
+                        '<td data-column="%s" data-value="%s">%s</td>',
+                        $columnName,
+                        $columnValue,
+                        $row[$columnName]
+                    );
                 }
+                // @todo: filters
+                $tr .= $td;
             }
+            $tr .= '</tr>';
 
-            if( $key == 'severity' ) {
-                $color      = isset( $severity_c[$field_data] ) ? $severity_c[$field_data] : 'transparent';
-
-                if (empty($field_data)) {
-                    $field_data = '<i>' . __('none', 'upstream') . '</i>';
-                } else {
-                    $field_data = '<span class="btn btn-xs" style="background: ' . esc_attr( $color ) . '">' . esc_html( $field_data ) . '</span>';
-                }
-            }
-
-            if ($table === 'files') {
-                if (in_array($key, array('title', 'description')) && empty($data_value)) {
-                    $field_data = '<i>' . __('none', 'upstream') . '</i>';
-                }
-            }
-
-            $tr .= '<td data-name="' . esc_attr( $key ) . '" ' . $order . ' data-value="' . esc_attr( $data_value ) . '" class="' . esc_attr( $setting['row_class'] ) . '">' . (in_array($key, array('notes', 'description')) ?  upstream_nl2br($field_data) : $field_data) . '</td>';
+            $output .= $tr;
         }
 
-        $tr .= '</tr>';
 
-        $tr = apply_filters('upstream:frontend:renderGridDataRow', $tr, $item, $table);
-
-        $output .= $tr;
-
+        //$output = '';
     }
 
     return $output;
@@ -630,6 +738,7 @@ function upstream_format_table_data( $item, $key, $setting ) {
 
     // type: textarea
     if( $setting['type'] == 'textarea' && ! empty( $field_data ) ) {
+        $field_data = preg_replace('/([^>]) *\r?\n(?! *<)/', '<br>', $field_data);
         $output = wp_kses_post( $field_data );
     }
 

@@ -16,6 +16,7 @@ $areTasksDisabledForThisProject = upstream_are_tasks_disabled();
 $areBugsDisabledAtAll = upstream_disable_bugs();
 $areBugsDisabledForThisProject = upstream_are_bugs_disabled();
 $areFilesDisabledForThisProject = upstream_are_files_disabled();
+$areCommentsDisabled = upstream_are_comments_disabled();
 
 $user = upstream_user_data();
 $pluginOptions = get_option('upstream_general');
@@ -148,10 +149,20 @@ $pluginOptions = get_option('upstream_general');
                         </li>
                         <?php endif; ?>
 
+                        <?php if (!$areCommentsDisabled): ?>
+                        <li>
+                          <a href="#discussion">
+                            <i class="fa fa-comments"></i>
+                            <?php _e('Discussion'); ?>
+                          </a>
+                        </li>
+                        <?php endif; ?>
+
                         <?php do_action( 'upstream_sidebar_after_single_menu' );  ?>
                     </ul>
                 </div>
             <?php endif; ?>
+
         </div>
         <!-- /sidebar menu -->
 

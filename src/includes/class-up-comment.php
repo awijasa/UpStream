@@ -191,6 +191,7 @@ class Comment extends Struct
         $data = array(
             'comment_id'           => (int)$this->id,
             'comment_post_ID'      => (int)$this->project_id,
+            'comment_author_url'   => "",
             'user_id'              => (int)$this->created_by->id,
             'comment_author'       => $this->created_by->name,
             'comment_author_email' => $this->created_by->email,
@@ -306,20 +307,23 @@ class Comment extends Struct
 
             $data = $this->toWpPatterns();
 
-            $integrityCheck = wp_allow_comment($data, true);
+
             /*
             // Commented to avoid comment rejection by WordPress on simmilar comments made across different items on the same project.
             if (is_wp_error($integrityCheck)) {
                 throw new \Exception($integrityCheck->get_error_message());
             }
             */
-            $integrityCheck = 1;
-
-            $this->state = $integrityCheck !== "spam" ? (int)$integrityCheck : $integrityCheck;
 
             $this->created_at->timestamp = time();
             $this->created_at->utc = date('Y-m-d H:i:s', $this->created_at->timestamp);
             $data['comment_date_gmt'] = $this->created_at->utc;
+
+            $integrityCheck = wp_allow_comment($data, true);
+
+            $integrityCheck = 1;
+
+            $this->state = $integrityCheck !== "spam" ? (int)$integrityCheck : $integrityCheck;
 
             $dateFormat = get_option('date_format');
             $timeFormat = get_option('time_format');

@@ -4,7 +4,6 @@ if (!defined('ABSPATH')) exit;
 
 use \UpStream\Traits\Singleton;
 use \Cmb2Grid\Grid\Cmb2Grid;
-use \UpStream\Migrations\ClientUsers as ClientUsersMigration;
 
 /**
  * Clients Metabox Class.
@@ -75,22 +74,7 @@ final class UpStream_Metaboxes_Clients
         self::$postTypeLabelSingular = upstream_client_label();
         self::$postTypeLabelPlural = upstream_client_label_plural();
 
-        // Define all ajax endpoints.
-        $ajaxEndpointsSchema = array(
-            'add_new_user'            => 'addNewUser',
-            'remove_user'             => 'removeUser',
-            'fetch_unassigned_users'  => 'fetchUnassignedUsers',
-            'add_existent_users'      => 'addExistentUsers',
-            'migrate_legacy_user'     => 'migrateLegacyUser',
-            'discard_legacy_user'     => 'discardLegacyUser',
-            'fetch_user_permissions'  => 'fetchUserPermissions',
-            'update_user_permissions' => 'updateUserPermissions'
-        );
-
-        $namespace = get_class(self::$instance);
-        foreach ($ajaxEndpointsSchema as $endpoint => $callbackName) {
-            add_action('wp_ajax_upstream:client.' . $endpoint, array($namespace, $callbackName));
-        }
+        self::attachHooks();
 
         // Enqueues the default ThickBox assets.
         add_thickbox();
@@ -98,22 +82,14 @@ final class UpStream_Metaboxes_Clients
         // Render all inner metaboxes.
         self::renderMetaboxes();
 
-        /*
-        // Deactivated on v1.12.0.
-        global $pagenow;
-        if ($pagenow === 'post.php') {
-            $user_id = get_current_user_id();
-            $disclaimerNoticeMetaName = '_upstream_legacy_users_disclaimer_notice';
-
-            $disclaimerNotice = (array)get_user_meta($user_id, $disclaimerNoticeMetaName);
-            $disclaimerNotice = !empty($disclaimerNotice) ? (bool)$disclaimerNotice[0] : false;
-
-            if (!$disclaimerNotice) {
-                add_action('admin_notices', array($namespace, 'renderDisclaimerMetabox'));
-                update_user_meta($user_id, $disclaimerNoticeMetaName, 1);
-            }
+        $namespace = get_class(self::$instance);
+        // Starting from v1.13.6 UpStream Users cannot be added through here anymore.
+        $noticeIdentifier = 'upstream:notices.client.add_new_users_changes';
+        $shouldDisplayNotice = (bool)get_option($noticeIdentifier);
+        if (!$shouldDisplayNotice) {
+            add_action('admin_notices', array($namespace, 'renderAddingClientUsersChangesNotice'));
+            update_option($noticeIdentifier, 1);
         }
-        */
     }
 
     /**
@@ -129,7 +105,7 @@ final class UpStream_Metaboxes_Clients
         self::renderLogoMetabox();
 
         $namespace = get_class(self::$instance);
-        $metaboxesCallbacksList = array('createUsersMetabox', 'createLegacyUsersMetabox');
+        $metaboxesCallbacksList = array('createUsersMetabox');
         foreach ($metaboxesCallbacksList as $callbackName) {
             add_action('add_meta_boxes', array($namespace, $callbackName));
         }
@@ -194,57 +170,6 @@ final class UpStream_Metaboxes_Clients
     }
 
     /**
-     * Renders the modal's html which is used to add new client users.
-     *
-     * @since   1.11.0
-     * @access  private
-     * @static
-     */
-    private static function renderAddNewUserModal()
-    {
-        ?>
-        <div id="modal-add-new-user" style="display: none;">
-            <div id="form-add-new-user">
-                <div>
-                    <div class="up-form-group">
-                        <label for="new-user-email"><?php echo __('Email', 'upstream') .' *'; ?></label>
-                        <input type="email" name="email" id="new-user-email" size="35" />
-                    </div>
-                    <div class="up-form-group">
-                        <label for="new-user-password"><?php echo __('Password', 'upstream') .' *'; ?></label>
-                        <input type="password" name="password" id="new-user-password" size="35" />
-                        <p class="description up-help-block"><?php echo __('Must be at least 6 characters long.', 'upstream'); ?></p>
-                    </div>
-                    <div class="up-form-group">
-                        <label for="new-user-password_confirmation"><?php echo __('Confirm Password', 'upstream') .' *'; ?></label>
-                        <input type="password" name="password_confirmation" id="new-user-password_confirmation" size="35" />
-                    </div>
-                    <div class="up-form-group">
-                        <label for="new-user-first_name"><?php echo __('First Name', 'upstream'); ?></label>
-                        <input type="text" name="first_name" id="new-user-first_name" size="35" />
-                    </div>
-                    <div class="up-form-group">
-                        <label for="new-user-last_name"><?php echo __('Last Name', 'upstream'); ?></label>
-                        <input type="text" name="last_name" id="new-user-last_name" size="35" />
-                    </div>
-                </div>
-                <div>
-                    <div class="up-form-group label-default">
-                        <label style="margin-left: 13.5em;">
-                            <input type="checkbox" name="notification" id="new-user-notification" value="1" checked />
-                            <span><?php echo __('Send user info via email', 'upstream'); ?></span>
-                        </label>
-                    </div>
-                    <div class="up-form-group">
-                        <button type="submit" class="button button-primary" data-label="<?php echo __('Add New User', 'upstream'); ?>" data-loading-label="<?php echo __('Adding...', 'upstream'); ?>"><?php echo __('Add New User', 'upstream'); ?></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
      * Renders the modal's html which is used to associate existent client users with a client.
      *
      * @since   1.11.0
@@ -287,46 +212,11 @@ final class UpStream_Metaboxes_Clients
      * @since   1.11.0
      * @access  private
      * @static
+     * @deprecated  1.13.6
      */
     private static function renderMigrateUserModal()
     {
-        ?>
-        <div id="modal-migrate-user" style="display: none;">
-            <div id="form-migrate-user">
-                <div>
-                    <h3><?php echo __('Credentials', 'upstream'); ?></h3>
-                    <div class="up-form-group">
-                        <label for="migrate-user-email"><?php echo __('Email', 'upstream') . ' *'; ?></label>
-                        <input type="email" name="email" id="migrate-user-email" required size="35" />
-                    </div>
-                    <div class="up-form-group">
-                        <label for="migrate-user-password"><?php echo __('Password', 'upstream') . ' *'; ?></label>
-                        <input type="password" name="password" id="migrate-user-password" required size="35" />
-                        <p class="description up-help-block"><?php echo __('Must be at least 6 characters long.', 'upstream'); ?></p>
-                    </div>
-                    <div class="up-form-group">
-                        <label for="migrate-user-password_c"><?php echo __('Confirm Password', 'upstream') . ' *'; ?></label>
-                        <input type="password" name="password_c" id="migrate-user-password_c" required size="35" />
-                    </div>
-                    <hr />
-                    <h3><?php echo __('Profile', 'upstream'); ?></h3>
-                    <div class="up-form-group">
-                        <label for="migrate-user-fname"><?php echo __('First Name', 'upstream'); ?></label>
-                        <input type="text" name="fname" id="migrate-user-fname" size="35" />
-                    </div>
-                    <div class="up-form-group">
-                        <label for="migrate-user-lname"><?php echo __('Last Name', 'upstream'); ?></label>
-                        <input type="text" name="lname" id="migrate-user-lname" size="35" />
-                    </div>
-                </div>
-                <div>
-                    <div class="up-form-group">
-                        <button type="submit" class="button button-primary" data-label="<?php echo __('Migrate User', 'upstream'); ?>" data-loading-label="<?php echo __('Migrating...', 'upstream'); ?>"><?php echo __('Migrate User', 'upstream'); ?></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <?php
+        _doing_it_wrong(__FUNCTION__, 'This method is deprecated and it will be removed on future releases.', '1.13.5');
     }
 
     /**
@@ -343,11 +233,6 @@ final class UpStream_Metaboxes_Clients
         ?>
 
         <div class="upstream-row">
-            <a
-                name="<?php echo __('Add New User', 'upstream'); ?>"
-                href="#TB_inline?width=600&height=360&inlineId=modal-add-new-user"
-                class="thickbox button"
-            ><?php echo __('Add New User', 'upstream'); ?></a>
             <a
                 id="add-existent-user"
                 name="<?php echo __('Add Existing Users', 'upstream'); ?>"
@@ -405,38 +290,7 @@ final class UpStream_Metaboxes_Clients
 
         <?php
         self::renderUserPermissionsModal();
-        self::renderAddNewUserModal();
         self::renderAddExistentUserModal();
-    }
-
-    /**
-     * Renders the Disclaimer metabox.
-     *
-     * @since   1.11.0
-     * @static
-     *
-     * @deprecated
-     */
-    public static function renderDisclaimerMetabox()
-    {
-        ?>
-        <div class="notice notice-info is-dismissible">
-            <h3><?php echo __("Please note: we made an important change to UpStream", 'upstream'); ?></h3>
-            <div class="upstream-row">
-                <p><?php echo sprintf(
-                    __("<code>%s</code> are now <code>%s</code>. Clients will be able to log in using their own password and manage their very own profile.", 'upstream'),
-                    __('UpStream Client Users', 'upstream'),
-                    __('WordPress Users', 'upstream')
-                ); ?></p>
-
-                <ul class="up-list-disc">
-                    <li><?php echo __('UpStream attempted to convert them automatically when the plugin was updated.', 'upstream'); ?></li>
-                    <li><?php echo __('Client Users that <strong>could not</strong> be automatically converted for some reason will be listed in the <code>Legacy Users</code> box on this page. They can be manually either converted/migrated or discarded.', 'upstream'); ?></li>
-                    <li><?php echo __("Client Users that were <strong>successfully</strong> converted will have the same permissions they have before and their email address is now their new password. Please make sure that they change their password.", 'upstream'); ?></li>
-                </ul>
-            </div>
-        </div>
-        <?php
     }
 
     /**
@@ -465,24 +319,11 @@ final class UpStream_Metaboxes_Clients
      *
      * @since   1.11.0
      * @static
+     * @deprecated  1.13.6
      */
     public static function createLegacyUsersMetabox()
     {
-        $client_id = upstream_post_id();
-
-        $legacyUsersErrors = (array)get_post_meta($client_id, '_upstream_client_legacy_users_errors');
-        if (count($legacyUsersErrors) === 0 || empty($legacyUsersErrors[0])) {
-            delete_post_meta($client_id, '_upstream_client_legacy_users_errors');
-            return;
-        }
-
-        add_meta_box(
-            self::$prefix . 'legacy_users',
-            '<span class="dashicons dashicons-groups"></span>' . __("Legacy Users", 'upstream'),
-            array(get_class(self::$instance), 'renderLegacyUsersMetabox'),
-            self::$postType,
-            'normal'
-        );
+        _doing_it_wrong(__FUNCTION__, 'This method is deprecated and it will be removed on future releases.', '1.13.5');
     }
 
     /**
@@ -568,8 +409,6 @@ final class UpStream_Metaboxes_Clients
                 <?php endforeach; ?>
                 </tbody>
             </table>
-
-            <?php self::renderMigrateUserModal(); ?>
         </div>
         <?php
     }
@@ -636,129 +475,6 @@ final class UpStream_Metaboxes_Clients
 
         $metaboxGrid = new Cmb2Grid($metabox);
         $metaboxGridRow = $metaboxGrid->addRow(array($logoField));
-    }
-
-    /**
-     * Ajax endpoint responsible for adding new Client Users to the system and client.
-     *
-     * @since   1.11.0
-     * @static
-     */
-    public static function addNewUser()
-    {
-        header('Content-Type: application/json');
-
-        global $wpdb;
-
-        $response = array(
-            'success' => false,
-            'data'    => null,
-            'err'     => null
-        );
-
-        try {
-            if (!upstream_admin_permissions('edit_clients')) {
-                throw new \Exception(__("You're not allowed to do this.", 'upstream'));
-            }
-
-            if (empty($_POST) || !isset($_POST['client'])) {
-                throw new \Exception(__('Invalid request.', 'upstream'));
-            }
-
-            $clientId = (int)$_POST['client'];
-            if ($clientId <= 0) {
-                throw new \Exception(__('Invalid Client ID.', 'upstream'));
-            }
-
-            $data = array(
-                'email'        => isset($_POST['email']) ? $_POST['email'] : '',
-                'password'     => isset($_POST['password']) ? $_POST['password'] : '',
-                'password_c'   => isset($_POST['password_c']) ? $_POST['password_c'] : '',
-                'first_name'   => trim(@$_POST['first_name']),
-                'last_name'    => trim(@$_POST['last_name']),
-                'notification' => isset($_POST['notification']) ? (bool)$_POST['notification'] : true
-            );
-
-            // Validate `password` field.
-            if (strlen($data['password']) < 6) {
-                throw new \Exception(__("Password must be at least 6 characters long.", 'upstream'));
-            }
-
-            if (strcmp($data['password'], $data['password_c']) !== 0) {
-                throw new \Exception(__("Passwords don't match.", 'upstream'));
-            }
-
-            // Validate the `email` field.
-            $userDataEmail = trim($data['email']);
-            if (!filter_var($userDataEmail, FILTER_VALIDATE_EMAIL) || !is_email($userDataEmail)) {
-                throw new \Exception(__("Invalid email.", 'upstream'));
-            } else {
-                $emailExists = (bool)$wpdb->get_var(sprintf('
-                    SELECT COUNT(`ID`)
-                    FROM `%s`
-                    WHERE `user_email` = "%s"',
-                    $wpdb->prefix . 'users',
-                    $data['email']
-                ));
-
-                if ($emailExists) {
-                    throw new \Exception(__("This email address is not available.", 'upstream'));
-                }
-            }
-
-            $userDataDisplayName = trim($data['first_name'] . ' ' . $data['last_name']);
-            $userDataDisplayName = !empty($userDataDisplayName) ? $userDataDisplayName : $data['email'];
-
-            $userData = array(
-                'user_login'    => $userDataDisplayName,
-                'user_pass'     => $data['password'],
-                'user_nicename' => $userDataEmail,
-                'user_email'    => $userDataEmail,
-                'display_name'  => $userDataEmail,
-                'nickname'      => $userDataDisplayName,
-                'first_name'    => $data['first_name'],
-                'last_name'     => $data['last_name'],
-                'role'          => 'upstream_client_user'
-            );
-
-            $userDataId = wp_insert_user($userData);
-            if (is_wp_error($userDataId)) {
-                throw new \Exception($userDataId->get_error_message());
-            }
-
-            if ($data['notification']) {
-                wp_new_user_notification($userDataId);
-            }
-
-            $currentUser = get_userdata(get_current_user_id());
-
-            $nowTimestamp = time();
-
-            $response['data'] = array(
-                'id'          => $userDataId,
-                'assigned_at' => upstream_convert_UTC_date_to_timezone($nowTimestamp),
-                'assigned_by' => $currentUser->display_name,
-                'name'        => $userDataDisplayName,
-                'email'       => $userDataEmail
-            );
-
-            $clientUsersMetaKey = '_upstream_new_client_users';
-            $clientUsersList = (array)get_post_meta($clientId, $clientUsersMetaKey, true);
-            array_push($clientUsersList, array(
-                'user_id'     => $userDataId,
-                'assigned_by' => $currentUser->ID,
-                'assigned_at' => date('Y-m-d H:i:s', $nowTimestamp)
-            ));
-            update_post_meta($clientId, $clientUsersMetaKey, $clientUsersList);
-
-            $response['success'] = true;
-        } catch (\Exception $e) {
-            $response['err'] = $e->getMessage();
-        }
-
-        echo wp_json_encode($response);
-
-        wp_die();
     }
 
     /**
@@ -989,6 +705,7 @@ final class UpStream_Metaboxes_Clients
      *
      * @since   1.11.0
      * @static
+     * @deprecated  1.13.6
      */
     public static function migrateLegacyUser()
     {
@@ -1007,161 +724,7 @@ final class UpStream_Metaboxes_Clients
                 throw new \Exception(__("You're not allowed to do this.", 'upstream'));
             }
 
-            if (empty($_POST) || !isset($_POST['client'])) {
-                throw new \Exception(__("Invalid UpStream Client ID.", 'upstream'));
-            }
-
-            $client_id = (int)$_POST['client'];
-
-            $data = array(
-                'id'         => isset($_POST['user_id']) ? $_POST['user_id'] : null,
-                'email'      => isset($_POST['email']) ? $_POST['email'] : null,
-                'password'   => isset($_POST['password']) ? $_POST['password'] : "",
-                'password_c' => isset($_POST['password_c']) ? $_POST['password_c'] : "",
-                'fname'      => isset($_POST['first_name']) ? $_POST['first_name'] : null,
-                'lname'      => isset($_POST['last_name']) ? $_POST['last_name'] : null
-            );
-
-            $userData = ClientUsersMigration::insertNewClientUser($data, $client_id);
-            $response['data'] = $userData;
-
-            $legacy_user_id = $userData['legacy_id'];
-            $user_id = $userData['id'];
-
-            // Update the '_upstream_client_users' meta.
-            $meta = (array)get_post_meta($client_id, '_upstream_client_users');
-            if (!empty($meta)) {
-                $meta = $meta[0];
-                foreach ($meta as $legacyUserIndex => $legacyUser) {
-                    if (isset($legacyUser['id']) && $legacyUser['id'] === $data['id']) {
-                        unset($meta[$legacyUserIndex]);
-                    }
-                }
-
-                update_post_meta($client_id, '_upstream_client_users', $meta);
-            }
-
-            // Update the '_upstream_client_legacy_users_errors' meta.
-            $meta = (array)get_post_meta($client_id, '_upstream_client_legacy_users_errors');
-            if (!empty($meta)) {
-                $meta = $meta[0];
-                foreach ($meta as $legacyUserId => $legacyUserError) {
-                    if ($legacyUserId === $data['id']) {
-                        unset($meta[$legacyUserId]);
-                    }
-                }
-
-                update_post_meta($client_id, '_upstream_client_legacy_users_errors', $meta);
-            }
-
-            $rowset = $wpdb->get_results('
-                SELECT `post_id`, `meta_key`, `meta_value`
-                FROM `' . $wpdb->prefix . 'postmeta`
-                WHERE `meta_key` LIKE "_upstream_project_%"
-                ORDER BY `post_id` ASC'
-            );
-
-            if (count($rowset) > 0) {
-                $convertUsersLegacyIdFromHaystack = function(&$haystack) use ($legacy_user_id, $user_id) {
-                    foreach ($haystack as &$needle) {
-                        if ($needle === $legacy_user_id) {
-                            $needle = $user_id;
-                        }
-                    }
-                };
-
-                foreach ($rowset as $projectMeta) {
-                    $project_id = (int)$projectMeta->post_id;
-
-                    if ($projectMeta->meta_key === '_upstream_project_activity') {
-                        $metaValue = (array)maybe_unserialize($projectMeta->meta_value);
-                        foreach ($metaValue as $activityIndex => $activity) {
-                            if ($activity['user_id'] === $legacy_user_id) {
-                                $activity['user_id'] = $user_id;
-                            }
-
-                            if (isset($activity['fields'])) {
-                                if (isset($activity['fields']['single'])) {
-                                    foreach ($activity['fields']['single'] as $activitySingleIndentifier => $activitySingle) {
-                                        if ($activitySingleIndentifier === '_upstream_project_client_users') {
-                                            if (isset($activitySingle['add'])) {
-                                                if (is_array($activitySingle['add'])) {
-                                                    $convertUsersLegacyIdFromHaystack($activitySingle['add']);
-                                                }
-                                            }
-
-                                            if (isset($activitySingle['from'])) {
-                                                if (is_array($activitySingle['from'])) {
-                                                    $convertUsersLegacyIdFromHaystack($activitySingle['from']);
-                                                }
-                                            }
-
-                                            if (isset($activitySingle['to'])) {
-                                                if (is_array($activitySingle['to'])) {
-                                                    $convertUsersLegacyIdFromHaystack($activitySingle['to']);
-                                                }
-                                            }
-                                        }
-
-                                        $activity['fields']['single'][$activitySingleIndentifier] = $activitySingle;
-                                    }
-                                }
-
-                                if (isset($activity['fields']['group'])) {
-                                    foreach ($activity['fields']['group'] as $groupIdentifier => $groupData) {
-                                        if (isset($groupData['add'])) {
-                                            foreach ($groupData['add'] as $rowIndex => $row) {
-                                                if (isset($row['created_by']) && $row['created_by'] === $legacy_user_id) {
-                                                    $row['created_by'] = $user_id;
-                                                    $groupData['add'][$rowIndex] = $row;
-                                                }
-                                            }
-                                        }
-
-                                        if (isset($groupData['remove'])) {
-                                            foreach ($groupData['remove'] as $rowIndex => $row) {
-                                                if (isset($row['created_by']) && $row['created_by'] === $legacy_user_id) {
-                                                    $row['created_by'] = $user_id;
-                                                    $groupData['remove'][$rowIndex] = $row;
-                                                }
-                                            }
-                                        }
-
-                                        $activity['fields']['group'][$groupIdentifier] = $groupData;
-                                    }
-                                }
-                            }
-
-                            $metaValue[$activityIndex] = $activity;
-                        }
-
-                        update_post_meta($project_id, $projectMeta->meta_key, $metaValue);
-                    } else if ($projectMeta->meta_key === '_upstream_project_discussion') {
-                        $metaValue = (array)maybe_unserialize($projectMeta->meta_value);
-                        foreach ($metaValue as $commentIndex => $comment) {
-                            if ($comment['created_by'] === $legacy_user_id) {
-                                $comment['created_by'] = $user_id;
-                                $metaValue[$commentIndex] = $comment;
-                            }
-                        }
-
-                        update_post_meta($project_id, $projectMeta->meta_key, $metaValue);
-                    } else if (preg_match('/(milestones|tasks|bugs|files)$/i', $projectMeta->meta_key)) {
-                        $metaValue = (array)maybe_unserialize($projectMeta->meta_value);
-                        foreach ($metaValue as $rowIndex => $row) {
-                            if (isset($row['created_by']) && $row['created_by'] === $legacy_user_id) {
-                                $row['created_by'] = $user_id;
-
-                                $metaValue[$rowIndex] = $row;
-                            }
-                        }
-
-                        update_post_meta($project_id, $projectMeta->meta_key, $metaValue);
-                    }
-                }
-            }
-
-            $response['success'] = true;
+            _doing_it_wrong(__FUNCTION__, 'This method is deprecated and it will be removed on future releases.', '1.13.5');
         } catch (\Exception $e) {
             $response['err'] = $e->getMessage();
         }
@@ -1176,6 +739,7 @@ final class UpStream_Metaboxes_Clients
      *
      * @since   1.11.0
      * @static
+     * @deprecated  1.13.6
      */
     public static function discardLegacyUser()
     {
@@ -1197,27 +761,7 @@ final class UpStream_Metaboxes_Clients
                 throw new \Exception(__("Invalid UpStream Client ID.", 'upstream'));
             }
 
-            $client_id = (int)$_POST['client'];
-            $user_id = isset($_POST['user_id']) ? trim($_POST['user_id']) : '';
-
-            if (empty($user_id)) {
-                throw new \Exception(__("Invalid UpStream Client ID.", 'upstream'));
-            }
-
-            // Update the '_upstream_client_legacy_users_errors' meta.
-            $meta = (array)get_post_meta($client_id, '_upstream_client_legacy_users_errors');
-            if (!empty($meta)) {
-                $meta = $meta[0];
-                foreach ($meta as $legacyUserId => $legacyUserError) {
-                    if ($legacyUserId === $user_id) {
-                        unset($meta[$legacyUserId]);
-                    }
-                }
-
-                update_post_meta($client_id, '_upstream_client_legacy_users_errors', $meta);
-            }
-
-            $response['success'] = true;
+            _doing_it_wrong(__FUNCTION__, 'This method is deprecated and it will be removed on future releases.', '1.13.5');
         } catch (\Exception $e) {
             $response['err'] = $e->getMessage();
         }
@@ -1390,5 +934,69 @@ final class UpStream_Metaboxes_Clients
         echo wp_json_encode($response);
 
         wp_die();
+    }
+
+    /**
+     * Add notice to users warning about Client Users creation changes.
+     *
+     * @since   1.13.6
+     * @static
+     */
+    public static function renderAddingClientUsersChangesNotice()
+    {
+        ?>
+        <div class="notice notice-info is-dismissible">
+          <h3><?php _e('Important notice', 'upstream'); ?></h3>
+          <p><?php _e('New users can no longer be added through here.', 'upstream'); ?></p>
+          <p><?php _e('From now on, to ensure newly created users are listed on the Existing Users table, do the following:', 'upstream'); ?></p>
+          <ol>
+            <li>
+              <?php printf(
+                  'Go to the %s page',
+                  sprintf(
+                      '<a href="%s" target="_blank">%s</a>',
+                      admin_url('user-new.php'),
+                      __('Users')
+                  )
+              ); ?>
+            </li>
+            <li><?php _e("Add the users as you need if you haven't already", 'upstream'); ?></li>
+            <li>
+              <?php printf(
+                  'Make sure they have the %s role assigned to them',
+                  sprintf(
+                      '<code>%s</code>',
+                      __('UpStream Client User', 'upstream')
+                  )
+              ); ?>
+            </li>
+          </ol>
+        </div>
+        <?php
+    }
+
+    /**
+     * Attach all hooks.
+     *
+     * @since   1.13.6
+     * @static
+     */
+    public static function attachHooks()
+    {
+        // Define all ajax endpoints.
+        $ajaxEndpointsSchema = array(
+            'remove_user'             => 'removeUser',
+            'fetch_unassigned_users'  => 'fetchUnassignedUsers',
+            'add_existent_users'      => 'addExistentUsers',
+            'migrate_legacy_user'     => 'migrateLegacyUser',
+            'discard_legacy_user'     => 'discardLegacyUser',
+            'fetch_user_permissions'  => 'fetchUserPermissions',
+            'update_user_permissions' => 'updateUserPermissions'
+        );
+
+        $namespace = get_class(self::$instance);
+        foreach ($ajaxEndpointsSchema as $endpoint => $callbackName) {
+            add_action('wp_ajax_upstream:client.' . $endpoint, array($namespace, $callbackName));
+        }
     }
 }

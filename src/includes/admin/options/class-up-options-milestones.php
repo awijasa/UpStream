@@ -48,8 +48,8 @@ class UpStream_Options_Milestones {
      */
     public function __construct() {
         // Set our title
-        $this->title = sprintf( __( '%s Settings', 'upstream' ), upstream_milestone_label() );
-        $this->menu_title = sprintf( __( '%s Settings', 'upstream' ), upstream_milestone_label() );
+        $this->title = upstream_milestone_label_plural();
+        $this->menu_title = $this->title;
         //$this->description = sprintf( __( '%s Description', 'upstream' ), upstream_milestone_label() );
     }
 

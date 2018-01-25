@@ -48,8 +48,8 @@ class UpStream_Options_General {
      */
     public function __construct() {
         // Set our title
-        $this->title = __( 'General Settings', 'upstream' );
-        $this->menu_title = __( 'General Settings', 'upstream' );
+        $this->title = __( 'General', 'upstream' );
+        $this->menu_title = $this->title;
         $this->description = '';
     }
     /**

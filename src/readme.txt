@@ -4,7 +4,7 @@ Tags: project, manage, management, project management, project manager, wordpres
 Requires at least: 4.5
 Tested up to: 4.9
 Requires PHP: 5.6
-Stable tag: 1.13.1
+Stable tag: 1.13.6
 License: GPL-3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -60,6 +60,7 @@ Add even more awesome features through the use of our extensions.
 - [Email Notifications](https://upstreamplugin.com/extensions/email-notifications)
 - [Copy Project](https://upstreamplugin.com/extensions/copy-project)
 - [Calendar View](https://upstreamplugin.com/extensions/calendar-view)
+- [Custom Fields](https://upstreamplugin.com/extensions/custom-fields)
 
 
 = Milestones & Tasks =
@@ -134,6 +135,68 @@ UpStream does not use the existing styling of your theme. The features and the v
 
 The format is based on [Keep a Changelog](http://keepachangelog.com)
 and this project adheres to [Semantic Versioning](http://semver.org).
+
+= [@todo: WIP] =
+
+= [1.13.6] - 2018-01-15 =
+
+Changed:
+* Users can no longer be added via Clients page
+
+Deprecated:
+* Legacy Users migration class/functions/methods were marked as deprecated
+
+Removed:
+* Removed upstream_disable_discussions() deprecated function
+
+Fixed:
+* Fixed conflict with Sliced Invoices plugin
+* Fixed bug where items comments were not being retrieved on admin
+* Fixed some dates being converted when they shouldn't
+* Fixed long user names overflowing on frontend sidebar
+* Fixed Notes/Description fields losing their format on frontend
+* Fixed not being able to assign existent users to Clients
+
+= [1.13.5] - 2018-01-04 =
+
+Changed:
+* Changed no data message for consistency across sections on frontend
+* Update CMB2 to v2.3.0
+* Legacy Client Users Migration script and related methods were marked as deprecated and will be removed on future releases
+
+Fixed:
+* Fixed some bad redirects relying on home_url() instead of site_url()
+* Removed stray "none" text from Discussion section in admin
+* Fixed some users not being able to save/update Projects on admin
+* Fixed some PHP warnings thrown while adding comments
+
+= [1.13.4] - 2017-12-29 =
+
+Fixed:
+* Fixed sidebar icon on admin in some pages
+
+= [1.13.3] - 2017-12-29 =
+
+Fixed:
+* Fixed white screen on settings page
+* Fixed CMB2 loading bug
+
+= [1.13.2] - 2017-12-29 =
+
+Added:
+* Added new extension: Custom Fields
+* Added new filter that allow custom post types to load CMB2 in admin
+
+Changed:
+* Display none to empty Notes/Description/Comments fields
+* Removed "Settings" label from settings sub menu items
+* CMB2 lib was updated to v2.2.6.2
+* Lang files cleanup
+* Project Comments section was renamed back to Discussion
+
+Fixed:
+* Fixed some assets being loaded on every page
+* Fixed missing Discussion link on the frontend sidebar
 
 = [1.13.1] - 2017-12-07 =
 

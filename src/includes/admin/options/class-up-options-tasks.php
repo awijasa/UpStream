@@ -48,8 +48,8 @@ class UpStream_Options_Tasks {
      */
     public function __construct() {
         // Set our title
-        $this->title = sprintf( __( '%s Settings', 'upstream' ), upstream_task_label() );
-        $this->menu_title = sprintf( __( '%s Settings', 'upstream' ), upstream_task_label() );
+        $this->title = upstream_task_label_plural();
+        $this->menu_title = $this->title;
         //$this->description = sprintf( __( '%s Description', 'upstream' ), upstream_task_label() );
     }
     /**

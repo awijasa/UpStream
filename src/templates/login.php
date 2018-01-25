@@ -2,9 +2,7 @@
 if (!defined('ABSPATH')) exit;
 
 if (is_archive() && (empty($_SESSION) || empty($_SESSION['upstream']) || empty($_SESSION['upstream']['user_id'])) && !is_user_logged_in()) {
-    $homeURL = home_url();
-    $redirectTo = $homeURL . '/wp-login.php?redirect_to=' . urlencode($homeURL . '/projects');
-    wp_redirect($redirectTo);
+    wp_redirect(wp_login_url(site_url('projects')));
     exit;
 }
 

@@ -3,6 +3,7 @@
 !.gitignore
 !.htaccess
 !.editorconfig
+!.github
 node_modules
 
 # General exclusion of system files #

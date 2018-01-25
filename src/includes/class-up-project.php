@@ -367,7 +367,7 @@ class UpStream_Project {
                 if( $value ) :
                     foreach ( $value as $key => $v ) {
                         if ( strpos($key, 'date') !== false ) {
-                            if ( isset( $v ) && ! empty( $v ) ) {
+                            if ( isset( $v ) && ! empty( $v ) && !$frontend ) {
                                 $data[$i][$key] = upstream_timestamp_from_date( $v );
                             }
                         }

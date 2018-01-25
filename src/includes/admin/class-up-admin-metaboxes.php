@@ -16,7 +16,11 @@ class UpStream_Admin_Metaboxes {
      * @since 0.1.0
      */
     public function __construct() {
-        add_action( 'cmb2_admin_init', array( $this, 'register_metaboxes' ) );
+        if (upstreamShouldRunCmb2()) {
+            add_action( 'cmb2_admin_init', array( $this, 'register_metaboxes' ) );
+        }
+
+        UpStream_Metaboxes_Clients::attachHooks();
     }
 
     /**

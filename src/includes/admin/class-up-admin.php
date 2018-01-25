@@ -31,6 +31,8 @@ class UpStream_Admin {
             add_filter('comment_status_links', array($this, 'commentStatusLinks'), 10, 1);
             add_action('pre_get_comments', array($this, 'preGetComments'), 10, 1);
         }
+
+        add_action('wp_ajax_upstream:project.get_all_items_comments', array('UpStream_Metaboxes_Projects', 'fetchAllItemsComments'));
     }
 
     public function limitUpStreamUserAccess()

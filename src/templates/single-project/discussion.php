@@ -10,9 +10,9 @@ $collapseBox = isset($pluginOptions['collapse_project_discussion']) && (bool)$pl
 
 <div class="col-xs-12 col-sm-12 col-md-12">
   <div class="x_panel">
-    <div class="x_title">
+    <div class="x_title" id="discussion">
       <h2>
-        <i class="fa fa-comments"></i> <?php _e('Comments'); ?>
+        <i class="fa fa-comments"></i> <?php _e('Discussion'); ?>
       </h2>
       <ul class="nav navbar-right panel_toolbox">
         <li>

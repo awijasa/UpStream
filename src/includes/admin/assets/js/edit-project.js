@@ -956,14 +956,6 @@
       item_id = typeof item_id === 'undefined' ? null : item_id;
       item_index = typeof item_index === 'undefined' ? null : item_index;
 
-      console.debug(arguments.callee.name + '()', {
-        content   : content || null,
-        nonce     : nonce || null,
-        item_type : item_type || null,
-        item_id   : item_id || null,
-        item_index: item_index || null
-      });
-
       $.ajax({
         type: 'POST',
         url : ajaxurl,

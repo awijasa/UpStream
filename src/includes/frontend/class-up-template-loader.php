@@ -42,7 +42,7 @@ class UpStream_Template_Loader {
             $project_id = upstream_post_id();
 
             if (!upstream_user_can_access_project($user_id, $project_id)) {
-                wp_redirect(site_url() . '/projects');
+                wp_redirect(site_url('projects'));
                 exit;
             }
         }
@@ -55,8 +55,7 @@ class UpStream_Template_Loader {
             UpStream_Login::doDestroySession();
 
             if (preg_match('/^\/projects/i', $_SERVER['REQUEST_URI'])) {
-                $homeURL = home_url();
-                $redirectTo = $homeURL . '/wp-login.php?redirect_to=' . urlencode($homeURL . '/projects');
+                $redirectTo = wp_login_url(site_url('projects'));
             } else {
                 $redirectTo = get_permalink();
             }

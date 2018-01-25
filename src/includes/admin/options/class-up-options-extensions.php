@@ -49,7 +49,7 @@ class UpStream_Options_Extensions {
     public function __construct() {
         // Set our title
         $this->title = __( 'Extensions', 'upstream' );
-        $this->menu_title = __( 'Extensions', 'upstream' );
+        $this->menu_title = $this->title;
         $this->description = __( 'These extensions add extra functionality to the UpStream Project Management plugin.', 'upstream' );
 
         add_action('cmb2_render_upstream_extensions_wrapper', array('UpStream_Options_Extensions', 'renderExtensionsWrapper'), 10, 5 );
@@ -117,6 +117,13 @@ class UpStream_Options_Extensions {
                 'description'      => __('This calendar display will allow you to easily see everything that’s happening in a project. You’ll be able to see due dates for all the milestones, tasks, and bugs.', 'upstream'),
                 'product_id'       => 6798,
                 'options_key_slug' => 'calendar-view'
+            ),
+            array(
+                'id'               => 'custom-fields',
+                'title'            => 'Custom Fields',
+                'description'      => __('This extension will allow you to add more information to tasks and bugs. For example, in a web design project, the bugs could have fields for the browser type, PHP version, and screen size.', 'upstream'),
+                'product_id'       => 8409,
+                'options_key_slug' => 'custom-fields'
             )
         );
 

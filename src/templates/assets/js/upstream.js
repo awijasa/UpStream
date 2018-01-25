@@ -28,35 +28,42 @@ function getTableDefaultOptions() {
         }
     };
 }
-
+/*
+// @todo
 var milestonesTableOptions = getTableDefaultOptions();
 milestonesTableOptions.columnDefs[0].targets = (function() {
     return [(jQuery('#milestones thead tr th').length - 1)];
 })();
+milestonesTableOptions.language.emptyTable = upstream.langs.MSG_NO_MILESTONES_YET;
 var tableMilestones = jQuery('#milestones').DataTable(milestonesTableOptions);
 
 var tasksTableOptions = getTableDefaultOptions();
+tasksTableOptions.language.emptyTable = upstream.langs.MSG_NO_TASKS_YET;
 tasksTableOptions.columnDefs[0].targets = (function() {
     return [(jQuery('#tasks thead tr th').length - 1)];
 })();
 var tableTasks = jQuery('#tasks').DataTable(tasksTableOptions);
 var tableMyTasks = jQuery('#my-tasks').DataTable(tasksTableOptions);
 
+
 var bugsTableOptions = getTableDefaultOptions();
 bugsTableOptions.columnDefs[0].targets = (function() {
     var lastIndex = jQuery('#bugs thead tr th').length;
     return [lastIndex - 1, lastIndex - 2];
 })();
+bugsTableOptions.language.emptyTable = upstream.langs.MSG_NO_BUGS_YET;
 var tableBugs = jQuery('#bugs').DataTable(bugsTableOptions);
 var tableMyBugs = jQuery('#my-bugs').DataTable(bugsTableOptions);
+
 
 var filesTableOptions = getTableDefaultOptions();
 filesTableOptions.columnDefs[0].targets = (function() {
     var lastIndex = jQuery('#files thead tr th').length;
     return [lastIndex - 1, lastIndex - 2];
 })();
+filesTableOptions.language.emptyTable = upstream.langs.MSG_NO_FILES_YET;
 var tableFiles = jQuery('#files').DataTable(filesTableOptions);
-
+*/
 /**
  * Resize function without multiple trigger
  *
@@ -248,3 +255,414 @@ jQuery(document).ready(function($){
     });
   });
 })(window, window.document, jQuery || {});
+
+
+
+
+
+
+
+(function(window, document, $, $data, TableExport, undefined) {
+
+
+  $(document).ready(function() {
+    $('.o-data-table tr[data-id] a[data-toggle="up-modal"]').on('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      var self = $(this);
+      var tr = self.parents('tr[data-id]');
+
+      var modal = new Modal({
+        el: self.attr('data-up-target')
+      });
+
+      modal.on('show', function(modal, e) {
+        $('[data-column]', tr).each(function() {
+          var columnEl = $(this);
+          var columnName = $(this).attr('data-column');
+
+          if (['notes', 'description', 'comments'].indexOf(columnName) >= 0) {
+            $('[data-column="'+ columnName +'"]', modal.el).html(columnEl.html());
+          } else {
+            $('[data-column="'+ columnName +'"]', modal.el).text(columnEl.text());
+          }
+        });
+      });
+
+      modal.on('hidden', function(modal, e) {
+        $('[data-column]', modal.el).html('');
+      });
+
+      modal.show();
+    });
+
+    function createOrderDirectionEl(direction) {
+      var span = $('<span></span>', {
+        class: 'pull-right o-order-direction'
+      });
+
+      span.append($('<i></i>', {
+        class: 'fa fa-sort' + (!direction ? '' : (direction === 'ASC' ? '-asc' : '-desc'))
+      }));
+
+      return span;
+    }
+
+    function orderTable(columnName, direction, table) {
+      var trs = $('> tbody > tr[data-id]', table);
+
+      if (trs.length === 0) return;
+
+      var data = [];
+
+      var tr, columnValue;
+
+      var data = [];
+      trs.each(function(trIndex) {
+        var tr = $(this);
+
+        columnValue = $('[data-column="'+ columnName +'"]', tr).attr('data-value') || "";
+
+        data.push({
+          index: trIndex,
+          value: columnValue.toUpperCase(),
+          children: $('> tbody > tr[data-parent="'+ tr.attr('data-id') +'"]', table).clone()
+        });
+      });
+
+      data.sort(function(a, b) {
+        var comparison = a.value.localeCompare(b.value);
+
+        if (direction === 'DESC' && comparison !== 0) {
+          comparison *= -1;
+        }
+
+        return comparison;
+      });
+
+      $('> tbody > tr', table).remove();
+
+      $.each(data, function(trNewIndex) {
+        var tr = $(trs.get(this.index));
+
+        $('> tbody', table).append(tr);
+
+        if (this.children.length > 0) {
+          $('> tbody', table).append(this.children);
+        }
+      });
+
+      table.attr('data-order-dir', direction)
+        .attr('data-ordered-by', columnName);
+
+      var th = $('thead tr th[data-column="'+ columnName +'"]');
+      $('.o-order-direction', th).remove();
+
+      th.append(createOrderDirectionEl(direction));
+    }
+
+    $('.o-data-table').on('click', 'thead th.is-orderable[role="button"]', function(e) {
+      e.preventDefault();
+
+      var self = $(this);
+      var wrapper = $(self.parent());
+
+      $('.o-order-direction', wrapper).remove();
+      $('th.is-orderable[role="button"]', wrapper).append(createOrderDirectionEl(null));
+      $('.o-order-direction', self).remove();
+
+      if (self.hasClass('is-ordered')) {
+        var orderDir = (self.attr('data-order-dir') || 'DESC').toUpperCase();
+        var newOrderDir = orderDir === 'DESC' ? 'ASC' : 'DESC';
+      } else {
+        $('.is-ordered', wrapper).removeClass('is-ordered');
+        $('th[data-order-dir]', wrapper).attr('data-order-dir', null);
+
+        var newOrderDir = 'ASC';
+      }
+
+      self.attr('data-order-dir', newOrderDir);
+      self.append(createOrderDirectionEl(newOrderDir));
+      self.addClass('is-ordered');
+
+      orderTable(self.attr('data-column'), newOrderDir, $(self.parents('table.o-data-table')));
+    });
+
+    function sortTable(columnName, columnValue, filtersWrapper) {
+      var table = $(filtersWrapper.attr('data-target'));
+      var filtersMap = [];
+
+      var filters = $('[data-column]', filtersWrapper);
+      filters.each(function() {
+        var self = $(this);
+
+        var value = self.val().trim();
+
+        filtersMap[self.attr('data-column')] = value.length  > 0 ? value : null;
+        filtersMap.push({
+          column    : self.attr('data-column'),
+          value     : value.length  > 0 ? value : null,
+          comparator: self.attr('data-compare-operator') || 'exact'
+        });
+      });
+
+      console.log(filtersMap);
+
+      $('tbody tr[data-empty-row]', table).remove();
+
+      var filtersHasChanged = false;
+      var trs = $('tbody tr[data-id]', table);
+
+      trs.removeClass('is-filtered');
+
+      trs.each(function(trIndex) {
+        var tr = $(this);
+        var shouldDisplay = false;
+
+        var filter, filterIndex, filterColumnValue, columnValue, comparator;
+        for (filterIndex =  0; filterIndex < filtersMap.length; filterIndex++) {
+          filter = filtersMap[filterIndex];
+          if (filter.value === null) {
+            continue;
+          }
+
+          filtersHasChanged = true;
+
+          columnValue = $('[data-column="'+ filter.column +'"]', tr).attr('data-value');
+
+          if (filter.comparator === 'contains') {
+            comparator = new RegExp(filter.value, 'i');
+            shouldDisplay = comparator.test(columnValue);
+          } else if (filter.comparator === 'exact') {
+            shouldDisplay = columnValue === filter.value;
+          } else if (filter.comparator === '>') {
+            shouldDisplay = columnValue > filter.value;
+          } else if (filter.comparator === '>=') {
+            shouldDisplay = columnValue >= filter.value;
+          } else if (filter.comparator === '<') {
+            shouldDisplay = columnValue < filter.value;
+          } else if (filter.comparator === '<=') {
+            shouldDisplay = columnValue <= filter.value;
+          } else if (filter.value === '__none__') {
+            shouldDisplay = !columnValue || columnValue === '__none__';
+          } else {
+            shouldDisplay = columnValue.localeCompare(filter.value) === 0;
+          }
+
+          if (filtersHasChanged && !shouldDisplay) {
+            break;
+          }
+        }
+
+        if (shouldDisplay) {
+          tr.addClass('is-filtered').show();
+        } else {
+          tr.hide();
+        }
+      });
+
+      if (!filtersHasChanged) {
+        trs.show();
+      }
+
+      var filteredRows = $('tbody tr[data-id]:visible', table);
+      if (filteredRows.length === 0) {
+        var thsCount = $('thead th', table).length;
+        $('tbody', table).append($('<tr data-empty-row><td colspan="'+ thsCount +'" class="text-center">No results</td></tr>'));
+      } else {
+        $('tbody tr[data-id]:visible', table).addClass('is-filtered');
+      }
+    }
+
+    $('.c-data-table .c-data-table__filters .o-select2').on('change', function(e) {
+      e.preventDefault();
+
+      var self = $(this);
+
+      sortTable(self.attr('data-column'), self.val(), $(self.parents('form').get(0)));
+    });
+
+    $('.c-data-table .c-data-table__filters input[type="search"]').on('keyup', function(e) {
+      e.preventDefault();
+
+      var self = $(this);
+      var value = self.val().trim();
+
+      sortTable(self.attr('data-column'), value, $(self.parents('form').get(0)));
+    });
+
+    // Expand rows in tables.
+    $('.o-data-table').on('click', 'tr.is-expandable > td:first-child', function(e) {
+      var self = $(this);
+      var tr = $(self.parents('tr[data-id]').get(0));
+      var table = $(tr.parents('.o-data-table').get(0));
+      var trChild = $('tr[data-parent="'+ tr.attr('data-id') +'"]', table);
+
+      if (trChild.length > 0) {
+        if (!tr.hasClass('is-expanded')) {
+          tr.addClass('is-expanded')
+            .attr('aria-expanded', 'true');
+          trChild.show();
+
+          $('.fa', self)
+            .removeClass('fa-angle-right')
+            .addClass('fa-angle-down');
+        } else {
+          tr.removeClass('is-expanded')
+            .attr('aria-expanded', 'false');
+          trChild.hide();
+
+          $('.fa', self)
+            .removeClass('fa-angle-down')
+            .addClass('fa-angle-right');
+        }
+      }
+    });
+
+    $('.o-datepicker').datepicker({
+      todayBtn: 'linked',
+      clearBtn: true,
+      autoclose: true,
+      keyboardNavigation: false,
+      format: $data.datepickerDateFormat
+    }).on('change', function(e) {
+      var self = $(this);
+      var value = self.datepicker('getUTCDate');
+
+      if (value) {
+        value /= 1000;
+      }
+
+      var hiddenField = $('#' + self.attr('id') + '_timestamp');
+      if (hiddenField.length > 0) {
+        hiddenField.val(value);
+      }
+    });
+
+    $('.c-data-table .c-data-table__filters .o-datepicker').on('change', function() {
+      var self = $(this);
+
+      var hiddenField = $('#' + self.attr('id') + '_timestamp');
+      if (hiddenField.length > 0) {
+        sortTable(hiddenField.attr('data-column'), '', $(self.parents('form').get(0)));
+      }
+    });
+
+    function cloneTableForExport(table) {
+      var clonedTable = table.clone();
+      $('thead tr', clonedTable).prepend($('<th>#</th>'));
+
+      $('tbody tr:not(.is-filtered)', clonedTable).remove();
+
+      var visibleIndex = 0;
+      $('tbody tr[data-id]', clonedTable).each(function() {
+        visibleIndex++;
+
+        $(this).prepend($('<td>'+ visibleIndex +'</td>'));
+      });
+
+      return clonedTable;
+    }
+
+    function getCurrentDate() {
+      var now = new Date();
+      var currentMonth = now.getMonth() + 1;
+      var currentDate = [
+        now.getFullYear(),
+        (currentMonth < 10 ? '0' + currentMonth : currentMonth),
+        now.getDate()
+      ];
+
+      var fileName = currentDate.join('');
+
+      return fileName;
+    }
+
+    function isExportedDataFormatValid(format) {
+      var allowedFormats = ['txt', 'csv'];
+
+      return allowedFormats.indexOf(format) >= 0;
+    }
+
+    function exportTableData(table, targetFormat, charset) {
+      if (!isExportedDataFormatValid(targetFormat)) {
+        return false;
+      }
+
+      charset = (typeof charset === 'undefined'
+                  || !charset
+        ? 'utf-8'
+        : charset
+      );
+
+      var clonedTable = cloneTableForExport(table);
+
+      $('> thead th[data-type="file"]', clonedTable).each(function() {
+        var th = $(this);
+
+        $('> tbody > tr > td[data-column="'+ th.attr('data-column') +'"]', clonedTable).each(function() {
+          var td = $(this);
+
+          var a = $('a', td);
+          if (a.length > 0) {
+            td.text(a.attr('href'));
+          }
+        });
+      });
+
+      var data = clonedTable.tableExport({
+        trimWhitespace: true
+      }).getExportData();
+
+      var tableId = table.attr('id');
+
+      var exportedData = data[tableId][targetFormat];
+
+      var dataBlob = new Blob([exportedData.data], {
+        type: exportedData.mimeType + ';charset=' + charset
+      });
+
+      var fileName = getCurrentDate() + '-' + exportedData.filename + exportedData.fileExtension;
+
+      saveAs(dataBlob, fileName);
+
+      return true;
+    }
+
+    $('.c-data-table [data-action="export"]').on('click', function(e) {
+      e.preventDefault();
+
+      var self = $(this);
+      var fileType = (self.attr('data-type') || '').toLowerCase();
+
+      if (!isExportedDataFormatValid(fileType)) {
+        console.error('Invalid mime type "'+ fileType +'"');
+        return;
+      }
+
+      var cTable = $(self.parents('.c-data-table'));
+      var table = $('.o-data-table', cTable);
+      if (cTable.length > 0
+          && table.length > 0) {
+        exportTableData(table, fileType);
+      }
+    });
+
+    $('.c-data-table select.form-control').select2({
+      allowClear: true
+    });
+
+    $('.c-data-table').each(function() {
+      var self = $(this);
+
+      var table = $('.o-data-table', self);
+      var order_dir = table.attr('data-order-dir') || 'DESC';
+      var order_by = table.attr('data-ordered-by') || '';
+
+      if (order_by.length > 0) {
+        orderTable(order_by, order_dir, table);
+      }
+    });
+  });
+})(window, window.document, jQuery || {}, upstream || {}, TableExport);

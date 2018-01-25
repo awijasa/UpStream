@@ -48,8 +48,8 @@ class UpStream_Options_Projects {
      */
     public function __construct() {
         // Set our title
-        $this->title = sprintf( __( '%s Settings', 'upstream' ), upstream_project_label() );
-        $this->menu_title = sprintf( __( '%s Settings', 'upstream' ), upstream_project_label() );
+        $this->title = upstream_project_label_plural();
+        $this->menu_title = $this->title;
         //$this->description = sprintf( __( '%s Description', 'upstream' ), upstream_project_label() );
     }
     /**

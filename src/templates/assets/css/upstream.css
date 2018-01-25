@@ -68,9 +68,6 @@ td span.btn.btn-xs {
 td .btn {
   margin-bottom: 0;
 }
-.table-striped > tbody > tr:nth-of-type(2n+1) {
-  background-color: #fdfdfd;
-}
 table.dataTable.dtr-inline.collapsed > tbody > tr > td:first-child, table.dataTable.dtr-inline.collapsed > tbody > tr > th:first-child {
   padding-left: 24px;
 }
@@ -330,4 +327,115 @@ table.datatable > tbody > tr.child > td.child > ul {
 .dataTable > tbody > tr > td[data-name="description"] br + ul {
   margin-top: 15px;
   margin-bottom: 0;
+}
+
+.x_panel > .x_content p[data-empty] {
+  margin: 0;
+}
+
+table.dataTable>tbody>tr.child .dtr-data ul {
+  list-style-type: initial;
+}
+
+.profile .profile_info h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+
+
+.o-data-table thead th.is-orderable[role="button"]:hover {
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, .05);
+}
+
+.c-data-table .dropdown-menu-right {
+  right: 0 !important;
+  left: auto !important;
+}
+
+.c-data-table .c-data-table__filters {
+  margin-bottom: 15px;
+}
+
+.c-data-table .c-data-table__filters .input-group {
+  margin-bottom: 0;
+}
+
+.o-data-table .o-order-direction .fa-sort {
+  color: #CCC;
+}
+
+.o-data-table td span {
+  line-height: inherit;
+}
+
+.s-text-color-gray {
+  color: #CCC;
+}
+
+.s-text-color-darkred {
+  color: #c0392b;
+}
+
+.c-data-table .dropdown-menu > li > a {
+  padding: 8px 16px;
+}
+
+.c-data-table .c-data-table__filters .input-group-addon + input {
+  height: 38px;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  font-size: 13px;
+}
+
+.c-data-table .c-data-table__filters .select2-selection {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+
+.c-data-table .c-data-table__filters .btn {
+  padding: 8px 12px;
+}
+
+.o-data-table tr td blockquote {
+  font-size: 1em;
+  padding: 5px 10px;
+}
+
+.o-data-table tr[data-id] i.fa-angle-right,
+.o-data-table tr[data-id] i.fa-angle-down {
+  width: 8.36px;
+}
+
+.o-data-table > thead > tr {
+  background-color: #f9f9f9;
+}
+
+.c-data-table .c-data-table__filters > div:first-child {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.c-data-table .c-data-table__filters > div[id$="-filters"] {
+  margin-top: 10px;
+}
+
+.o-data-table > thead > tr > th {
+  min-width: 110px;
+}
+
+.c-data-table .c-data-table__filters > .visible-xs > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+@media screen and (max-width: 767px) {
+  .c-data-table {
+    border: 0;
+  }
 }

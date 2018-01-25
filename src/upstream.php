@@ -4,7 +4,7 @@
  * Description: A WordPress Project Management plugin by UpStream.
  * Author: UpStream
  * Author URI: https://upstreamplugin.com
- * Version: 1.13.1
+ * Version: 1.13.6-issue/154
  * Text Domain: upstream
  * Domain Path: /languages
  */
@@ -103,7 +103,6 @@ final class UpStream
         add_filter('comments_clauses', array($this, 'filterCommentsOnDashboard'), 10, 2);
         add_filter('views_dashboard', array('UpStream_Admin', 'commentStatusLinks'), 10, 1);
 
-
         // Render additional update info if needed.
         global $pagenow;
         if ($pagenow === "plugins.php") {
@@ -188,7 +187,7 @@ final class UpStream
         $this->define( 'UPSTREAM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
         $this->define( 'UPSTREAM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
         $this->define( 'UPSTREAM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
-        $this->define( 'UPSTREAM_VERSION', '1.13.1' );
+        $this->define( 'UPSTREAM_VERSION', '1.13.6-issue/154' );
     }
 
     /**
@@ -237,8 +236,36 @@ final class UpStream
         include_once( 'includes/abs-class-up-struct.php' );
 
         if ( $this->is_request( 'admin' ) ) {
-            include_once( 'includes/libraries/cmb2/init.php' );
-            include_once( 'includes/libraries/cmb2-grid/Cmb2GridPlugin.php' );
+            global $pagenow;
+
+            if ($pagenow === 'post.php'
+                || $pagenow === 'post-new.php'
+            ) {
+                $post_id = isset($_GET['post']) ? (int)$_GET['post'] : 0;
+                $postType = get_post_type($post_id);
+                if (empty($postType)) {
+                    $postType = isset($_GET['post_type']) ? $_GET['post_type'] : '';
+                    if (empty($postType)
+                        && isset($_POST['post_type'])
+                    ) {
+                        $postType = $_POST['post_type'];
+                    }
+                }
+
+                $postTypesUsingCmb2 = apply_filters('upstream:post_types_using_cmb2', array('project', 'client'));
+
+                if (in_array($postType, $postTypesUsingCmb2)) {
+                    include_once('includes/libraries/cmb2/init.php');
+                    include_once('includes/libraries/cmb2-grid/Cmb2GridPlugin.php');
+                }
+            } else if ($pagenow === 'admin.php'
+                && isset($_GET['page'])
+                && preg_match('/^upstream_/i', $_GET['page'])
+            ) {
+                include_once('includes/libraries/cmb2/init.php');
+                include_once('includes/libraries/cmb2-grid/Cmb2GridPlugin.php');
+            }
+
             include_once( 'includes/admin/class-up-admin.php' );
             include_once( 'includes/admin/class-up-admin-tasks-page.php' );
             include_once( 'includes/admin/class-up-admin-bugs-page.php' );
@@ -251,13 +278,13 @@ final class UpStream
             include_once( 'includes/frontend/up-enqueues.php' );
             include_once( 'includes/frontend/up-template-functions.php' );
             include_once( 'includes/frontend/up-table-functions.php' );
+            include_once( 'includes/frontend/class-up-view.php' );
         }
 
         include_once( 'includes/up-general-functions.php' );
         include_once( 'includes/up-project-functions.php' );
         include_once( 'includes/up-client-functions.php' );
         include_once( 'includes/up-permissions-functions.php' );
-        include_once( 'includes/up-client-users-migration.php' );
         include_once( 'includes/up-comments-migration.php' );
         include_once( 'includes/class-up-comments.php' );
         include_once( 'includes/class-up-comment.php' );
@@ -285,7 +312,6 @@ final class UpStream
         UpStream_Roles::addClientUsersRole();
 
         // Executes the Legacy Client Users Migration script if needed.
-        \UpStream\Migrations\ClientUsers::run();
         \UpStream\Migrations\Comments::run();
 
         $user = wp_get_current_user();

@@ -558,10 +558,19 @@ function upstreamRenderCommentsBox($item_id = "", $itemType = "project", $projec
     if ($returnAsHtml) {
         ob_start();
     }
+
+    $commentsCacheCount = count($commentsCache);
+
+    if ($commentsCacheCount === 0
+        && !is_admin()
+    ) {
+        printf('<p data-empty><i class="s-text-color-gray">%s</i></>', __('none', 'upstream'));
+    }
     ?>
+
     <div class="c-comments" data-type="<?php echo $itemType; ?>" <?php echo $renderControls ? 'data-nonce' : ''; ?>>
         <?php
-        if (count($commentsCache) > 0) {
+        if ($commentsCacheCount > 0) {
             if (is_admin()) {
                 foreach ($commentsCache as $comment) {
                     if ($comment->parent_id === 0) {

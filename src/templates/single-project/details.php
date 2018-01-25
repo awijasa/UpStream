@@ -77,6 +77,8 @@ $isClientsDisabled = is_clients_disabled();
           <p class="title"><?php _e('Members', 'upstream'); ?></p>
           <?php upstream_output_project_members(); ?>
         </div>
+
+        <?php do_action('upstream:frontend.project.render_details', $project->id); ?>
       </div>
       <?php if (!empty($project->description)): ?>
       <div>
