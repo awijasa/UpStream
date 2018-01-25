@@ -25,39 +25,75 @@ function upstream_milestone_table_settings() {
      */
 
     $columnsSchema = array(
+        'id' => array(
+            'display'       => false,
+            'type'          => 'text',
+            'heading'       => '',
+            'heading_class' => '',
+            'row_class'     => '',
+        ),
+        'created_by' => array(
+            'display'       => false,
+            'type'          => 'name',
+            'heading'       => '',
+            'heading_class' => '',
+            'row_class'     => '',
+        ),
+        'created_time' => array(
+            'display'       => false,
+            'type'          => 'text',
+            'heading'       => '',
+            'heading_class' => '',
+            'row_class'     => '',
+        ),
         'milestone' => array(
-            'type'  => 'milestone',
-            'label' => upstream_milestone_label()
+            'display'       => true,
+            'type'          => 'text',
+            'heading'       => upstream_milestone_label(),
+            'heading_class' => '',
+            'row_class'     => 'test',
         ),
         'assigned_to' => array(
-            'type'  => 'user',
-            'label' => __('Assigned To', 'upstream')
+            'display'       => true,
+            'type'          => 'name',
+            'heading'       => __( 'Assigned To', 'upstream' ),
+            'heading_class' => '',
+            'row_class'     => '',
         ),
         'tasks' => array(
-            'type'        => 'tasks',
-            'label'       => upstream_task_label_plural(),
-            'orderable'   => false,
-            'searcheable' => false
+            'display'       => true,
+            'type'          => 'tasks',
+            'heading'       => upstream_task_label_plural(),
+            'heading_class' => '',
+            'row_class'     => '',
         ),
         'progress' => array(
-            'type'        => 'progress',
-            'label'       => __('Progress', 'upstream'),
-            'searcheable' => false
+            'display'       => true,
+            'type'          => 'text',
+            'heading'       => __( 'Progress', 'upstream' ),
+            'heading_class' => '',
+            'row_class'     => '',
         ),
         'start_date' => array(
-            'type'  => 'date',
-            'label' => __('Start Date', 'upstream'),
+            'display'       => true,
+            'type'          => 'date',
+            'heading'       => __( 'Start Date', 'upstream' ),
+            'heading_class' => '',
+            'row_class'     => '',
         ),
         'end_date' => array(
-            'type'  => 'date',
-            'label' => __('End Date', 'upstream'),
+            'display'       => true,
+            'type'          => 'date',
+            'heading'       => __( 'End Date', 'upstream' ),
+            'heading_class' => '',
+            'row_class'     => '',
         ),
         'notes' => array(
-            'type'        => 'longText',
-            'label'       => __('Notes', 'upstream'),
-            'classes'     => 'text-center',
-            'orderable'   => false,
-            'searcheable' => false
+            'display'       => true,
+            'type'          => 'textarea',
+            'heading'       => __( 'Notes', 'upstream' ),
+            'heading_class' => 'none',
+            'row_class'     => '',
         )
     );
 
@@ -68,18 +104,18 @@ function upstream_milestone_table_settings() {
     $allowComments = upstreamAreCommentsEnabledOnMilestones();
     if ($allowComments) {
         $columnsSchema['comments'] = array(
-            'type'        => 'comments',
-            'label'       => __('Comments'),
-            'item_type'   => 'milestone',
-            'classes'     => 'text-center',
-            'orderable'   => false,
-            'searcheable' => false
+            'display'       => true,
+            'type'          => 'comments',
+            'heading'       => __('Comments'),
+            'heading_class' => 'none',
+            'row_class'     => "",
+            'item_type'     => "milestone"
         );
     }
 
-    // $settings = apply_filters( 'upstream_milestone_table_settings', $columnsSchema);
+    $settings = apply_filters( 'upstream_milestone_table_settings', $columnsSchema);
 
-    return $columnsSchema;
+    return $settings;
 
 }
 
@@ -393,7 +429,7 @@ function upstream_output_table_header( $table ) {
     $output = null;
 
     switch ( $table ) {
-        case 'milestone':
+        case 'milestones':
             $settings   = upstream_milestone_table_settings();
             break;
         case 'tasks':
@@ -407,8 +443,7 @@ function upstream_output_table_header( $table ) {
             break;
     }
 
-    // @todo: adapt and remove
-    if( isset( $settings ) && $table !== 'milestone' ) :
+    if( isset( $settings ) ) :
 
         $output .= '<tr>';
         foreach ($settings as $key => $setting) {
@@ -430,58 +465,9 @@ function upstream_output_table_header( $table ) {
         }
         $output .= '</tr>';
 
-        return $output;
     endif;
 
-    $html = '<tr>';
-
-    foreach ($settings as $columnName => $columnSettings) {
-        $isOrderable = true;
-        if (isset($columnSettings['orderable'])
-            && (bool)$columnSettings['orderable'] === false
-        ) {
-            $isOrderable = false;
-        }
-
-        $attrs = array(
-            'class'       => '',
-            'data-column' => $columnName
-        );
-
-        if ($isOrderable) {
-            $attrs['class'] .= ' is-orderable ';
-            $attrs['role'] = 'button';
-        }
-
-        if (isset($columnSettings['classes'])) {
-            $attrs['class'] .= $columnSettings['classes'];
-        }
-
-        if (isset($setting['attributes'])
-            && is_array($setting['attributes'])
-        ) {
-            $attrs = array_merge($attrs, $settings['attributes']);
-        }
-
-        // @todo: filter
-
-        $sanitizedAttrs = array();
-        foreach ($attrs as $attrKey => $attrValue) {
-            $sanitizedAttrs[] = sprintf('%s="%s"', $attrKey, esc_attr($attrValue));
-        }
-
-        $th = sprintf('<th %s>%s</th>', implode(' ', $sanitizedAttrs), (isset($columnSettings['label']) ? $columnSettings['label'] : ''));
-
-        $html .= $th;
-
-        // @todo: filter
-    }
-
-    $html .= '</tr>';
-
-    // @todo: filter
-
-    return $html;
+    return $output;
 
 }
 
@@ -499,13 +485,8 @@ function upstream_output_table_rows( $id, $table, $filterRowsetByCurrentUser = f
     }
 
     switch ( $table ) {
-        case 'milestone':
-            if (upstream_are_milestones_disabled($id) || upstream_disable_milestones()) {
-                $data = array();
-            } else {
-                $data = upstream_project_milestones($id);
-            }
-
+        case 'milestones':
+            $data       = upstream_are_milestones_disabled($id) || upstream_disable_milestones() ? array() : upstream_project_milestones($id);
             $settings   = upstream_milestone_table_settings();
             break;
         case 'tasks':
@@ -525,159 +506,80 @@ function upstream_output_table_rows( $id, $table, $filterRowsetByCurrentUser = f
             break;
     }
 
-    if ($table !== 'milestone') {
-        if( empty( $data[0] ) )
-            return;
+    if( empty( $data[0] ) )
+        return;
 
-        $data = array_reverse( $data );
-        $output = null;
+    $data = array_reverse( $data );
+    $output = null;
 
-        foreach ( $data as $item ) {
-            // Check if $item should be skipped if we want to filter data by the current logged in user.
-            if ($filterRowsetByCurrentUser && (!isset($item['assigned_to']) || ($currentUserId > 0 && (int)$item['assigned_to'] !== $currentUserId))) {
+    foreach ( $data as $item ) {
+        // Check if $item should be skipped if we want to filter data by the current logged in user.
+        if ($filterRowsetByCurrentUser && (!isset($item['assigned_to']) || ($currentUserId > 0 && (int)$item['assigned_to'] !== $currentUserId))) {
+            continue;
+        }
+
+        $tr = '<tr>';
+        foreach ($settings as $key => $setting) {
+            if( isset( $setting['display'] ) && ! $setting['display'] )
                 continue;
+
+            if( ! isset( $item[$key] ) )
+                $item[$key] = '';
+
+            $order = null;
+
+            if (is_array($item[$key])) {
+                $item[$key] = implode('#', $item[$key]);
             }
 
-            $tr = '<tr>';
-            foreach ($settings as $key => $setting) {
-                if( isset( $setting['display'] ) && ! $setting['display'] )
-                    continue;
+            // get the raw value before formatting
+            // will be used with the frontend edit plugin for getting actual values via JS
+            $data_value = maybe_serialize( $item[$key] );
 
-                if( ! isset( $item[$key] ) )
-                    $item[$key] = '';
-
-                $order = null;
-
-                if (is_array($item[$key])) {
-                    $item[$key] = implode('#', $item[$key]);
-                }
-
-                // get the raw value before formatting
-                // will be used with the frontend edit plugin for getting actual values via JS
-                $data_value = maybe_serialize( $item[$key] );
-
-                // if we have a date field, set the data-order attribute to allow proper ordering in the table
-                if( $setting['type'] == 'date' ) {
-                    $order = 'data-order="' . esc_attr( $data_value ) . '"';
-                }
-                if( $setting['type'] == 'file' ) {
-                    $data_value = '';
-                }
-
-                // now process and format the data for proper output
-                $field_data = upstream_format_table_data( $item, $key, $setting );
-
-                $isValueEmpty = strlen($field_data) === 0;
-
-                if ($key === 'status'
-                    || $key === 'severity'
-                ) {
-                    $collectionKeyName = $key . '_c';
-                    $color = isset(${$collectionKeyName}[$field_data])
-                        ? ${$collectionKeyName}[$field_data]
-                        : 'transparent';
-                    if (!$isValueEmpty) {
-                        $field_data = sprintf(
-                            '<span class="btn btn-xs" style="background: %s">%s</span>',
-                            esc_attr($color),
-                            esc_html($field_data)
-                        );
-                    }
-                }
-
-                if ($isValueEmpty) {
-                    $field_data = '<i>' . __('none', 'upstream') . '</i>';
-                }
-
-                $td = '<td data-name="' . esc_attr( $key ) . '" ' . $order . ' data-value="' . esc_attr( $data_value ) . '" class="' . esc_attr( $setting['row_class'] ) . '">' . $field_data . '</td>';
-
-                $tr .= apply_filters('upstream:frontend:renderGridDataRowColumn', $td, $key, $setting, $item, $table);
+            // if we have a date field, set the data-order attribute to allow proper ordering in the table
+            if( $setting['type'] == 'date' ) {
+                $order = 'data-order="' . esc_attr( $data_value ) . '"';
+            }
+            if( $setting['type'] == 'file' ) {
+                $data_value = '';
             }
 
-            $tr .= '</tr>';
+            // now process and format the data for proper output
+            $field_data = upstream_format_table_data( $item, $key, $setting );
 
-            $tr = apply_filters('upstream:frontend:renderGridDataRow', $tr, $item, $table);
+            $isValueEmpty = strlen($field_data) === 0;
 
-            $output .= $tr;
-
-        }
-    } else {
-        $users = upstreamGetUsersMap();
-        $milestonesColors = upstream_project_milestone_colors();
-
-        foreach ($data as $row) {
-            $tr = '<tr data-id="' . $row['id'] . '">';
-            foreach ($settings as $columnName => $columnSettings) {
-                $columnType = $columnSettings['type'];
-
-                if ($table === 'milestone' && $columnName === $table || $columnName === 'title') {
-                    $td = sprintf(
-                        '<td>
-                          <a href="#" data-toggle="up-modal" data-up-target="%s" data-column="%s" data-value="%s">%3$s</a>
-                        </td>',
-                        '#' . $table . 'Modal',
-                        $table,
-                        $row[$columnName]
-                    );
-                } else if ($columnType === 'longText') {
-                    $isEmpty = strlen(trim($row[$columnName])) === 0;
-
-                    $td = sprintf(
-                        '<td class="text-center">
-                          <i class="fa fa-%s"></i>
-                          <div class="hide" data-column="%s">%s</div>
-                        </td>',
-                        !$isEmpty ? 'check' : 'times',
-                        $columnName,
-                        $row[$columnName]
-                    );
-                } else if ($columnType === 'comments') {
-                    $td = sprintf(
-                        '<td class="text-center">
-                          <i class="fa fa-comments-o"></i> %s
-                          <div class="hide" data-column="%s"></div>
-                        </td>',
-                        (int)$row[$columnName . '_count'],
-                        $columnName
-                    );
-                } else {
-                    $columnValue = $row[$columnName];
-
-                    if ($columnType === 'date') {
-                        $row[$columnName] = upstream_convert_UTC_date_to_timezone($row[$columnName], false);
-                    } else if ($columnType === 'progress') {
-                        $row[$columnName] .= '%';
-                    } else if ($columnType === 'tasks') {
-                        $row[$columnName] = sprintf('%s Open / %s Total', $row['task_open'], $row['task_count']);
-                    } else if ($columnType === 'user') {
-                        if ($row[$columnName] > 0) {
-                            if (isset($users[$row[$columnName]])) {
-                                $row[$columnName] = $users[$row[$columnName]];
-                            } else {
-                                $row[$columnName] = '<i>user not found</i>';
-                            }
-                        } else {
-                            $row[$columnName] = '<i>none</i>';
-                        }
-                    }
-
-                    $td = sprintf(
-                        '<td data-column="%s" data-value="%s">%s</td>',
-                        $columnName,
-                        $columnValue,
-                        $row[$columnName]
+            if ($key === 'status'
+                || $key === 'severity'
+            ) {
+                $collectionKeyName = $key . '_c';
+                $color = isset(${$collectionKeyName}[$field_data])
+                    ? ${$collectionKeyName}[$field_data]
+                    : 'transparent';
+                if (!$isValueEmpty) {
+                    $field_data = sprintf(
+                        '<span class="btn btn-xs" style="background: %s">%s</span>',
+                        esc_attr($color),
+                        esc_html($field_data)
                     );
                 }
-                // @todo: filters
-                $tr .= $td;
             }
-            $tr .= '</tr>';
 
-            $output .= $tr;
+            if ($isValueEmpty) {
+                $field_data = '<i>' . __('none', 'upstream') . '</i>';
+            }
+
+            $td = '<td data-name="' . esc_attr( $key ) . '" ' . $order . ' data-value="' . esc_attr( $data_value ) . '" class="' . esc_attr( $setting['row_class'] ) . '">' . $field_data . '</td>';
+
+            $tr .= apply_filters('upstream:frontend:renderGridDataRowColumn', $td, $key, $setting, $item, $table);
         }
 
+        $tr .= '</tr>';
 
-        //$output = '';
+        $tr = apply_filters('upstream:frontend:renderGridDataRow', $tr, $item, $table);
+
+        $output .= $tr;
+
     }
 
     return $output;

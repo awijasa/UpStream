@@ -45,11 +45,8 @@ function upstream_enqueue_styles_scripts(){
     $childtheme = trailingslashit( get_stylesheet_directory() ) . $dir . 'assets/css/';
 
     wp_enqueue_style( 'up-bootstrap', $up_url . $css_dir . 'bootstrap.min.css', array(), $up_ver, 'all' );
-    wp_enqueue_style( 'up-tableexport', $up_url . $css_dir . 'vendor/tableexport.min.css', array(), $up_ver, 'all' );
-    wp_enqueue_style( 'up-select2', $up_url . $css_dir . 'vendor/select2.min.css', array(), $up_ver, 'all' );
     wp_enqueue_style( 'up-fontawesome', $up_url . $css_dir . 'fontawesome.min.css', array(), $up_ver, 'all' );
     wp_enqueue_style( 'framework', $up_url . $css_dir . 'framework.css', array(), $up_ver, 'all' );
-    wp_enqueue_style( 'upstream-datepicker', $up_url . $css_dir . 'vendor/bootstrap-datepicker3.min.css', array(), $up_ver, 'all' );
     wp_enqueue_style( 'upstream', $up_url . $css_dir . 'upstream.css', array(), $up_ver, 'all' );
 
     if( isset( $GLOBALS['login_template'] ) )
@@ -69,9 +66,6 @@ function upstream_enqueue_styles_scripts(){
      */
     $js_dir = 'templates/assets/js/';
 
-    wp_enqueue_script('up-filesaver', $up_url . $js_dir . 'vendor/FileSaver.min.js', array(), $up_ver, true);
-    wp_enqueue_script('up-tableexport', $up_url . $js_dir . 'vendor/tableexport.min.js', array(), $up_ver, true);
-    wp_enqueue_script('up-select2', $up_url . $js_dir . 'vendor/select2.full.min.js', array(), $up_ver, true);
     wp_enqueue_script( 'up-bootstrap', $up_url . $js_dir . 'bootstrap.min.js', array( 'jquery' ), $up_ver, true );
     wp_enqueue_script( 'up-fastclick', $up_url . $js_dir . 'fastclick.js', array( 'jquery' ), $up_ver, true );
     wp_enqueue_script( 'up-nprogress', $up_url . $js_dir . 'nprogress.js', array( 'jquery' ), $up_ver, true );
@@ -80,10 +74,7 @@ function upstream_enqueue_styles_scripts(){
     wp_enqueue_script( 'dt-buttons', $up_url . $js_dir . 'datatables/dataTables.buttons.min.js', array( 'jquery' ), $up_ver, true );
     wp_enqueue_script( 'dt-responsive', $up_url . $js_dir . 'datatables/dataTables.responsive.min.js', array( 'jquery' ), $up_ver, true );
 
-    wp_enqueue_script( 'upstream-datepicker', $up_url . $js_dir . 'vendor/bootstrap-datepicker.min.js', array( 'jquery', 'up-bootstrap' ), $up_ver, true );
-    wp_enqueue_script( 'up-modal', $up_url . $js_dir . 'vendor/modal.min.js', array( 'jquery' ), $up_ver, true );
-
-    wp_enqueue_script( 'upstream', $up_url . $js_dir . 'upstream.js', array( 'jquery', 'up-modal' ), $up_ver, true );
+    wp_enqueue_script( 'upstream', $up_url . $js_dir . 'upstream.js', array( 'jquery' ), $up_ver, true );
 
     $noDataStringTemplate = _x("You haven't created any %s yet", '%s: item name, ie Milestones, Tasks, Bugs, Files, Discussion', 'upstream');
 
@@ -91,9 +82,7 @@ function upstream_enqueue_styles_scripts(){
         'ajaxurl'           => admin_url( 'admin-ajax.php'),
         'upload_url'        => admin_url('async-upload.php'),
         'security'          => wp_create_nonce( 'upstream-nonce' ),
-        'dateFormat'        => get_option('date_format'),
         'js_date_format'    => upstream_php_to_js_dateformat(),
-        'datepickerDateFormat' => upstreamGetDateFormatForJsDatepicker(),
         'langs'             => array(
             'LB_COPY'                 => __('Copy', 'upstream'),
             'LB_CSV'                  => __('CSV', 'upstream'),

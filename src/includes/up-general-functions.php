@@ -868,14 +868,10 @@ function applyOEmbedFiltersToWysiwygEditorContent($content, $field_args, $field)
  *
  * @return  string|false                The converted string or false in case of failure.
  */
-function upstream_convert_UTC_date_to_timezone($subject, $includeTime = true)
+function upstream_convert_UTC_date_to_timezone($subject)
 {
     try {
-        $dateFormat = get_option('date_format');
-
-        if ($includeTime === true) {
-            $dateFormat .= ' ' . get_option('time_format');
-        }
+        $dateFormat = get_option('date_format') . ' ' . get_option('time_format');
 
         if (is_numeric($subject)) {
             $theDate = new DateTime();
@@ -1314,55 +1310,4 @@ function upstreamShouldRunCmb2()
     }
 
     return false;
-}
-
-function upstreamGetUsersMap()
-{
-    $map = array();
-
-    $rowset = get_users(array(
-        'fields' => array('ID', 'display_name')
-    ));
-
-    foreach ($rowset as $user) {
-        $map[(int)$user->ID] = $user->display_name;
-    }
-
-    return $map;
-}
-
-function upstreamGetDateFormatForJsDatepicker()
-{
-    $format = get_option('date_format');
-    $supported_options = array(
-        'd' => 'dd',  // Day, leading 0
-        'j' => 'd',   // Day, no 0
-        'z' => 'o',   // Day of the year, no leading zeroes,
-        // 'D' => 'D',   // Day name short, not sure how it'll work with translations
-        // 'l' => 'DD',  // Day name full, idem before
-        'm' => 'mm',  // Month of the year, leading 0
-        'n' => 'm',   // Month of the year, no leading 0
-        // 'M' => 'M',   // Month, Short name
-        'F' => 'MM',  // Month, full name,
-        'y' => 'yy',   // Year, two digit
-        'Y' => 'yyyy',  // Year, full
-        'H' => 'HH',  // Hour with leading 0 (24 hour)
-        'G' => 'H',   // Hour with no leading 0 (24 hour)
-        'h' => 'hh',  // Hour with leading 0 (12 hour)
-        'g' => 'h',   // Hour with no leading 0 (12 hour),
-        'i' => 'mm',  // Minute with leading 0,
-        's' => 'ss',  // Second with leading 0,
-        'a' => 'tt',  // am/pm
-        'A' => 'TT'   // AM/PM
-    );
-
-    foreach ( $supported_options as $php => $js ) {
-        // replaces every instance of a supported option, but skips escaped characters
-        $format = preg_replace( "~(?<!\\\\)$php~", $js, $format );
-    }
-
-    $format = preg_replace_callback( '~(?:\\\.)+~', 'upstream_wrap_escaped_chars', $format );
-
-    return $format;
-
 }
