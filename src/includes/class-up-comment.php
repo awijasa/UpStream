@@ -344,6 +344,8 @@ class Comment extends Struct
 
             $this->id = $comment_id;
 
+            wp_new_comment_notify_postauthor($this->id);
+
             return $this->id;
         } else {
             $data = $this->toWpPatterns();

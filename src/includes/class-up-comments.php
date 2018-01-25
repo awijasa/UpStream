@@ -70,6 +70,7 @@ class Comments
         add_action('wp_ajax_upstream:project.unapprove_comment', array(self::$namespace, 'unapproveComment'));
         add_action('wp_ajax_upstream:project.approve_comment', array(self::$namespace, 'approveComment'));
         add_action('wp_ajax_upstream:project.fetch_comments', array(self::$namespace, 'fetchComments'));
+        add_filter('comment_notification_recipients', array(self::$namespace, 'customizeRecipients'), 10, 2);
     }
 
     /**
@@ -715,5 +716,81 @@ class Comments
         }
 
         wp_send_json($response);
+    }
+
+    /**
+     * Notify users about new comments.
+     * Any user participating on the given discussion will be notified.
+     *
+     * @since   @todo
+     * @static
+     *
+     * @param   array   $recipients     List of the notification recipients.
+     * @param   int     $commentId      The added comment ID.
+     *
+     * @return  array
+     */
+    public static function customizeRecipients($recipients, $commentId)
+    {
+        $comment = get_comment($commentId);
+        if ($comment instanceof \WP_Comment
+            && $comment->comment_ID > 0
+        ) {
+            $projectId = $comment->comment_post_ID;
+
+            $project = get_post($projectId);
+            if ($project instanceof \WP_Post
+                && $project->post_type === 'project'
+            ) {
+                $itemType = get_comment_meta($commentId, 'type', true);
+                if ($itemType === 'project') {
+                    // Notify the Project Owner.
+                    $projectOwnerId = (int)get_post_meta($projectId, '_upstream_project_owner', true);
+                    if ($projectOwnerId > 0) {
+                        $projectOwner = get_user_by('id', $projectOwnerId);
+                        if ($projectOwner instanceof \WP_User
+                            && !empty($projectOwner->user_email)
+                        ) {
+                            $recipients[] = $projectOwner->user_email;
+                        }
+                    }
+
+                    // Notify the Project Author.
+                    $projectAuthor = get_user_by('id', $project->post_author);
+                    if ($projectAuthor instanceof \WP_User
+                        && !empty($projectAuthor->user_email)
+                    ) {
+                        $recipients[] = $projectAuthor->user_email;
+                    }
+                } else if (in_array($itemType, array('milestone', 'task', 'bug', 'file'))) {
+                    $needle = get_comment_meta($commentId, 'item_id', true);
+
+                    // Notify the assignee.
+                    $items = (array)get_post_meta($projectId, "_upstream_project_{$itemType}s", true);
+                    if (count($items) > 0) {
+                        foreach ($items as $item) {
+                            if (isset($item['id'])
+                                && $item['id'] === $needle
+                                && isset($item['assigned_to'])
+                                && (int)$item['assigned_to'] > 0
+                            ) {
+                                $assignee = get_user_by('id', $item['assigned_to']);
+                                if ($assignee instanceof \WP_User
+                                    && !empty($assignee->user_email)
+                                ) {
+                                    $recipients[] = $assignee->user_email;
+                                }
+
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                $recipients = array_unique($recipients);
+            }
+        }
+
+        return $recipients;
     }
 }
