@@ -198,7 +198,11 @@ function upstream_user_data( $data = 0, $ignore_current = false ) {
     if( $wp_user && is_object( $wp_user ) ) {
 
         // get the role
-        $role = ucwords( $wp_user->roles[0] );
+        $role = '';
+        if (!empty($wp_user->roles)) {
+            $role = ucwords(array_values($wp_user->roles)[0]);
+        }
+
         if( in_array( 'upstream_user', $wp_user->roles ) ) {
             $role = sprintf( __( '%s User', 'upstream' ), upstream_project_label() );
         }
