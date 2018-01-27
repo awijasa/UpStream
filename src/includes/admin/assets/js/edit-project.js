@@ -405,7 +405,6 @@
         setTimeout(function() {
           $row.find('.up-o-tab[data-target=".up-c-tab-content-comments"]').remove();
           $row.find('.up-c-tabs-header').remove();
-          $row.find('.cmb-row[data-fieldtype="comments"]').remove();
         }, 25);
 
         $group.find( '.cmb-add-row span' ).remove();
