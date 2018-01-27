@@ -201,7 +201,7 @@ window.CMB2.wysiwyg = window.CMB2.wysiwyg || {};
 	 * @return {void}
 	 */
 	wysiwyg.shiftStart = function( evt, $btn, $from, $to ) {
-		$from.add( $to ).find( '.wp-editor-wrap textarea' ).each( function() {
+		$from.add( $to ).find( '.cmb2-wysiwyg-inner-wrap .wp-editor-wrap textarea' ).each( function() {
 			wysiwyg.destroy( $( this ).attr( 'id' ) );
 		} );
 	};
