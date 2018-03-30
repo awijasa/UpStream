@@ -427,6 +427,12 @@ class UpStream_Metaboxes_Projects {
 
         ob_start();
         ?>
+
+        <p>
+            <i class="fa fa-filter"></i>
+            Filters
+        </p>
+
         <div class="up-c-filters">
           <div class="up-c-filter">
             <label for="<?php echo $prefix . 'milestone'; ?>"><?php echo upstream_milestone_label(); ?></label>
@@ -495,6 +501,12 @@ class UpStream_Metaboxes_Projects {
 
         ob_start();
         ?>
+
+        <p>
+            <i class="fa fa-filter"></i>
+            Filters
+        </p>
+
         <div class="up-c-filters">
           <div class="up-c-filter">
             <label for="<?php echo $prefix . 'title'; ?>"><?php _e('Title', 'upstream'); ?></label>
@@ -578,6 +590,12 @@ class UpStream_Metaboxes_Projects {
 
         ob_start();
         ?>
+
+        <p>
+            <i class="fa fa-filter"></i>
+            Filters
+        </p>
+
         <div class="up-c-filters">
           <div class="up-c-filter">
             <label for="<?php echo $prefix . 'title'; ?>"><?php _e('Title', 'upstream'); ?></label>
@@ -649,6 +667,12 @@ class UpStream_Metaboxes_Projects {
 
         ob_start();
         ?>
+
+        <p>
+            <i class="fa fa-filter"></i>
+            Filters
+        </p>
+
         <div class="up-c-filters">
           <div class="up-c-filter">
             <label for="<?php echo $prefix . 'title'; ?>"><?php _e('Title', 'upstream'); ?></label>
