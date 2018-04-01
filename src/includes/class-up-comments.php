@@ -810,17 +810,21 @@ class Comments
                     $item = (object)array(
                         'id'          => $row['id'],
                         'title'       => $row[$titleKey],
-                        'assigned_to' => isset($row['assigned_to']) ? (int)$row['assigned_to'] : 0,
+                        'assigned_to' => isset($row['assigned_to']) ? (array)$row['assigned_to'] : array(),
                         'created_by'  => isset($row['created_by']) ? (int)$row['created_by'] : 0,
                         'type'        => $key
                     );
 
-                    if ($item->assigned_to > 0) {
-                        $user = $getUser($item->assigned_to);
-                        if (empty($user)) {
-                            $item->assigned_to = 0;
-                        } else {
-                            $item->assigned_to = $user->id;
+                    if( count( $item->assigned_to ) > 0 ) {
+
+                        foreach( $item->assigned_to as $key => $assignee ) {
+
+                            $user = $getUser( $assignee );
+                            if (empty($user)) {
+                                $item->assigned_to[$key] = 0;
+                            } else {
+                                $item->assigned_to[$key] = $user->id;
+                            }
                         }
                     }
 
@@ -873,9 +877,16 @@ class Comments
                 $fetchProjectMetaAsMap($project->id, $comment->target, $project->{$comment->target . 's'});
                 foreach ($project->{$comment->target . 's'} as $item) {
                     if ($item->id === $comment->target_id) {
-                        if ($item->assigned_to > 0) {
-                            $user = $getUser($item->assigned_to);
-                            $recipients[] = $user->email;
+                        if( count( $item->assigned_to ) > 0) {
+
+                            foreach( $item->assigned_to as $key => $assignee ) {
+
+                                $user = $getUser( $assignee );
+
+                                if( !empty( $user ) ) {
+                                    $recipients[] = $user->email;
+                                }
+                            }
                         }
 
                         if ($item->created_by > 0) {
