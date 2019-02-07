@@ -86,7 +86,7 @@ if ( ! class_exists('UpStream_Options_Extensions')) :
                 5
             );
 
-            add_filter('allex_upgrade_mailchimp_config', [$this, 'filter_allex_upgrade_mailchimp_config'], 10, 2);
+            add_filter('allex_upgrade_link', [$this, 'filter_allex_upgrade_link'], 10, 2);
             add_action('allex_addon_update_license', [$this, 'action_allex_addon_update_license'], 10, 4);
             add_filter('allex_addons_get_license_key', [$this, 'filter_allex_addons_get_license_key'], 10, 2);
             add_filter('allex_addons_get_license_status', [$this, 'filter_allex_addons_get_license_status'], 10, 2);
@@ -296,21 +296,18 @@ if ( ! class_exists('UpStream_Options_Extensions')) :
         }
 
         /**
-         * @param array  $mailchimp_config
+         * @param string  $ad_link
          * @param string $plugin_name
          *
          * @return array
          */
-        public function filter_allex_upgrade_mailchimp_config($mailchimp_config, $plugin_name)
+        public function filter_allex_upgrade_link($ad_link, $plugin_name)
         {
             if ($plugin_name === 'upstream') {
-                $mailchimp_config['action_url'] = 'https://ostraining.us1.list-manage.com/subscribe/post?u=c4fe34ed80790dd773846d4e1&amp;id=da81b9d9e3';
-                $mailchimp_config['code']       = 'b_c4fe34ed80790dd773846d4e1_da81b9d9e3';
-                $mailchimp_config['id']         = '169';
-                $mailchimp_config['group_id']   = '2';
+                $ad_link = 'https://upstreamplugin.com/welcome-coupon/';
             }
 
-            return $mailchimp_config;
+            return $ad_link;
         }
 
         /**
