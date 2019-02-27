@@ -102,11 +102,6 @@ if ( ! class_exists('UpStream')) :
             }
 
             $this->init_hooks();
-
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-
             $this->init_twig();
 
             do_action('upstream_loaded');
