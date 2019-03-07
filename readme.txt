@@ -4,7 +4,7 @@ Tags: project, manage, management, project management, project manager, wordpres
 Requires at least: 4.5
 Tested up to: 5.0
 Requires PHP: 5.6
-Stable tag: 1.23.1
+Stable tag: 1.23.2
 License: GPL-3
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -180,7 +180,6 @@ and this project adheres to [Semantic Versioning](http://semver.org).
 * Fixed sorting projects by status in the front-end;
 * Fixed the counter of open tasks on milestones;
 * Fixed the HTML header we print in the front-end;
-* Fixed the persistence of sorted columns in front-end tables;
 * Fixed the persistence of sorted columns in front-end tables;
 * Fixed the way we load the plugin's text domain;
 * Fixed the write method in the UpStream_Debug class adding a conditional to do nothing if debug is disabled;
