@@ -142,6 +142,14 @@ If you were having date issues within Projects, please clear your cache and re-s
 The format is based on [Keep a Changelog](http://keepachangelog.com)
 and this project adheres to [Semantic Versioning](http://semver.org).
 
+= [1.23.2] - 2019-03-07 =
+
+* Fixed how we load the sidebar template in the frontend, allowing themes to provide a custom template;
+* Updated the subscription banner for a discount of 20% on subscribing;
+* Fixed the compatibility issue with Health Check to pass all the tests;
+* Fixed the URL for assets on systems that rely on Bedrock or other custom WordPress folders structure;
+* Fixed a JS error about undefined datepicker object in the frontend on some themes;
+
 = [1.23.1] - 2019-01-15 =
 
 * Fixed PHP error when set_time_limit function is disabled;
